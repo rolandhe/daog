@@ -6,7 +6,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
-	txrequest "github.com/roland/daog/tx"
+	txrequest "github.com/rolandhe/daog/tx"
 )
 
 type tcStatus int

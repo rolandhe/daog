@@ -1,7 +1,7 @@
 package daog
 
 import (
-	txrequest "github.com/roland/daog/tx"
+	txrequest "github.com/rolandhe/daog/tx"
 )
 
 func Update[T any](ins *T, meta *TableMeta[T], tc *TransContext) (int64, error) {

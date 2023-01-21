@@ -1,4 +1,4 @@
-module github.com/roland/daog
+module github.com/rolandhe/daog
 
 go 1.19
 
