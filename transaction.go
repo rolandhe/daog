@@ -29,7 +29,7 @@ var invalidTcStatus = errors.New("invalid tc status")
 func NewTransContext(datasource Datasource, txRequest txrequest.RequestStyle, traceId string) (*TransContext, error) {
 	var conn *sql.Conn
 	var err error
-	ctx := BuildContext(traceId, nil, nil)
+	ctx := buildContext(traceId, nil, nil)
 
 	if conn, err = datasource.getDB(ctx).Conn(context.Background()); err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func NewTransContext(datasource Datasource, txRequest txrequest.RequestStyle, tr
 func NewTransContextWithSharding(datasource Datasource, txRequest txrequest.RequestStyle, traceId string, shardingKey any, datasourceShardingKey any) (*TransContext, error) {
 	var conn *sql.Conn
 	var err error
-	ctx := BuildContext(traceId, SHARDINGKEY, nil)
+	ctx := buildContext(traceId, SHARDINGKEY, nil)
 	if conn, err = datasource.getDB(ctx).Conn(context.Background()); err != nil {
 		return nil, err
 	}
@@ -69,7 +69,19 @@ func NewTransContextWithSharding(datasource Datasource, txRequest txrequest.Requ
 	return tc, nil
 }
 
-func BuildContext(traceId string, shardingKey any, dataSourceSharingKey any) context.Context {
+func GetDatasourceShardingKeyFromCtx(ctx context.Context) any {
+	mapAny := ctx.Value(CTXVALUES)
+	if mapAny == nil {
+		return nil
+	}
+	mapValue, ok := mapAny.(map[string]any)
+	if !ok {
+		return nil
+	}
+	return mapValue[DATASOURCESHARDINGKEY]
+}
+
+func buildContext(traceId string, shardingKey any, dataSourceSharingKey any) context.Context {
 	mp := map[string]any{}
 	mp[TRACEID] = traceId
 	if shardingKey != nil {
@@ -81,6 +93,18 @@ func BuildContext(traceId string, shardingKey any, dataSourceSharingKey any) con
 
 	ctx := context.WithValue(context.Background(), CTXVALUES, mp)
 	return ctx
+}
+
+func getTableShardingKeyFromCtx(ctx context.Context) any {
+	mapAny := ctx.Value(CTXVALUES)
+	if mapAny == nil {
+		return nil
+	}
+	mapValue, ok := mapAny.(map[string]any)
+	if !ok {
+		return nil
+	}
+	return mapValue[SHARDINGKEY]
 }
 
 type TransContext struct {
@@ -140,13 +164,13 @@ func (tc *TransContext) rollback() error {
 }
 
 func (tc *TransContext) Complete(e error) {
-	DaogLogError(tc, e)
+	DaogLogError(tc.ctx, e)
 	if tc.status == tcStatusInvalid {
 		return
 	}
 	if tc.txRequest == txrequest.RequestNone {
 		if err := tc.conn.Close(); err != nil {
-			DaogLogError(tc, err)
+			DaogLogError(tc.ctx, err)
 		}
 		tc.status = tcStatusInvalid
 		return
@@ -159,7 +183,7 @@ func (tc *TransContext) Complete(e error) {
 		}
 		err := tc.commit()
 		if err != nil {
-			DaogLogError(tc, err)
+			DaogLogError(tc.ctx, err)
 			tc.rollbackAndClose()
 		}
 		tc.status = tcStatusInvalid
@@ -170,9 +194,9 @@ func (tc *TransContext) Complete(e error) {
 func (tc *TransContext) rollbackAndClose() {
 	var err error
 	if err = tc.rollback(); err != nil {
-		DaogLogError(tc, err)
+		DaogLogError(tc.ctx, err)
 		if err := tc.conn.Close(); err != nil {
-			DaogLogError(tc, err)
+			DaogLogError(tc.ctx, err)
 		}
 	}
 }

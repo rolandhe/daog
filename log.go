@@ -1,13 +1,14 @@
 package daog
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 )
 
-type DaogLogErrorFunc func(tc *TransContext, err error)
-type DaogLogInfoFunc func(tc *TransContext, content string)
-type DaogLogExecSQLFunc func(tc *TransContext, sql string, args []any)
+type DaogLogErrorFunc func(ctx context.Context, err error)
+type DaogLogInfoFunc func(ctx context.Context, content string)
+type DaogLogExecSQLFunc func(ctx context.Context, sql string, args []any)
 
 var (
 	DaogLogError   DaogLogErrorFunc
@@ -16,14 +17,14 @@ var (
 )
 
 func init() {
-	DaogLogError = func(tc *TransContext, err error) {
-		log.Printf("tid=%s,err: %v\n", getTraceId(tc), err)
+	DaogLogError = func(ctx context.Context, err error) {
+		log.Printf("tid=%s,err: %v\n", getTraceId(ctx), err)
 	}
-	DaogLogInfo = func(tc *TransContext, content string) {
-		log.Printf("tid=%s,content: %s\n", getTraceId(tc), content)
+	DaogLogInfo = func(ctx context.Context, content string) {
+		log.Printf("tid=%s,content: %s\n", getTraceId(ctx), content)
 	}
-	DaogLogExecSQL = func(tc *TransContext, sql string, args []any) {
-		traceId := getTraceId(tc)
+	DaogLogExecSQL = func(ctx context.Context, sql string, args []any) {
+		traceId := getTraceId(ctx)
 		jargs, err := json.Marshal(args)
 		if err != nil {
 			log.Printf("[Trace SQL] tid=%s, log sql but to json error:%v\n", traceId, err)
@@ -32,8 +33,8 @@ func init() {
 	}
 }
 
-func getTraceId(tc *TransContext) string {
-	values := tc.ctx.Value(CTXVALUES)
+func getTraceId(ctx context.Context) string {
+	values := ctx.Value(CTXVALUES)
 	if values == nil {
 		return ""
 	}

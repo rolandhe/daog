@@ -33,7 +33,7 @@ func QueryListMatcher[T any](m Matcher, meta *TableMeta[T], tc *TransContext) ([
 	}()
 	sql, args := selectQuery(meta, tc.ctx, m)
 	if tc.LogSQL {
-		DaogLogExecSQL(tc, sql, args)
+		DaogLogExecSQL(tc.ctx, sql, args)
 	}
 	rows, err := tc.conn.QueryContext(tc.ctx, sql, args...)
 	if err != nil {
@@ -65,7 +65,7 @@ func QueryOneMatcher[T any](m Matcher, meta *TableMeta[T], tc *TransContext) (*T
 		}
 	}()
 	if tc.LogSQL {
-		DaogLogExecSQL(tc, sql, args)
+		DaogLogExecSQL(tc.ctx, sql, args)
 	}
 	rows, err := tc.conn.QueryContext(tc.ctx, sql, args...)
 	if err != nil {
@@ -98,7 +98,7 @@ func QuerySQL[T any](tc *TransContext, mapper RowMapper[T], sql string, args ...
 		}
 	}()
 	if tc.LogSQL {
-		DaogLogExecSQL(tc, sql, args)
+		DaogLogExecSQL(tc.ctx, sql, args)
 	}
 	rows, err := tc.conn.QueryContext(tc.ctx, sql, args...)
 	if err != nil {

@@ -11,7 +11,8 @@ func GetTableName[T any](ctx context.Context, meta *TableMeta[T]) string {
 	tableName := meta.Table
 
 	if meta.ShardingFunc != nil {
-		tableName = meta.ShardingFunc(tableName, ctx)
+		shardingKey := getTableShardingKeyFromCtx(ctx)
+		tableName = meta.ShardingFunc(tableName, shardingKey)
 	}
 	return tableName
 }
@@ -104,7 +105,7 @@ func buildInsInfoOfRow[T any](meta *TableMeta[T]) (*T, []any) {
 }
 
 func forError(tc *TransContext) {
-	DaogLogInfo(tc, "met for Error")
+	DaogLogInfo(tc.ctx, "met for Error")
 	if tc.txRequest == txrequest.RequestNone {
 		return
 	}

@@ -74,7 +74,7 @@ func execSQLCore(tc *TransContext, sql string, args []any) (int64, error) {
 	}()
 
 	if tc.LogSQL {
-		DaogLogExecSQL(tc, sql, args)
+		DaogLogExecSQL(tc.ctx, sql, args)
 	}
 	result, err := tc.conn.ExecContext(tc.ctx, sql, args...)
 	if err != nil {

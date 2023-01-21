@@ -21,12 +21,12 @@ daog是轻量级的数据库访问组件，它并不能称之为orm组件，提�
 
 ### Datasource
 数据源，用于描述一个mysql database，这儿的database指的是您使用create database创建出来的逻辑库。Datasource提供获链接、关闭库函数，也可以配置在改数据源上操作数据是否要输出执行sql日志。
-* 使用NewDatasource函数来创建Datasource对象
+* 使用NewDatasource或NewShardingDatasource函数来创建Datasource对象
 * 数据库相关配置使用DbConf描述
 
 ### TransContext
 事务的执行上下文，所有的数据库操作都应该在一个数据上下文中执行，所有操作完成后必须调用Complete函数来结束事务上下文，一旦结束该上下文将不能再被使用。
-* 使用NewTransContext和NewTransContextWithSharding函数来创建事务上下文，二者的区别是是否支持分库分表，分库分表不必同时进行，可以只分库，也可以只分表，当前还不支持分库，但支持分表，不支持的sharding Key传入nil即可。
+* 使用NewTransContext和NewTransContextWithSharding函数来创建事务上下文，二者的区别是是否支持分库分表，分库分表不必同时进行，可以只分库，也可以只分表，不需要的sharding Key传入nil即可。
 * 支持3中事务类型：没有事务、只读事务、写事务，txrequest包定义了对应的常量
 * 必须调用Complete方法来结束事务上下文,一般使用defer语句来结束事务上下文
 
@@ -290,3 +290,22 @@ func update() {
 	fmt.Println(af, err)
 }
 ```
+
+# 其他
+## 分库分表
+daog缺省支持分表，您需要为每个表指定分表函数，这需要设置TableMeta.ShardingFunc，具体需要在编译出的-ext.go文件的init函数中设置。
+daog缺省支持分库，分库策略需要您实现DatasourceShardingPolicy接口，并在NewShardingDatasource是传入。ModInt64ShardingDatasourcePolicy是一个简单实现。GetDatasourceShardingKeyFromCtx函数实现了从context.Context中读取datasource sharding key的能力。
+
+## 日志输出
+通过DbConf.LogSQL可以设置该数据源是否需要输出执行的sql及参数，可以为数据源指定，每个一个TransContext执行时会继承这个配置，您也可以设置
+TransContext.LogSQL属性为每个事务上下文设置，更细粒度的控制日志输出。
+
+日志的输出实现，缺省是调用标准库的log包，您也可以通过配置daog包的3个全局函数来修改：
+* DaogLogErrorFunc
+* DaogLogInfoFunc
+* DaogLogExecSQLFunc
+
+## 日期
+
+golang的time.Time支持纳秒级别，但数据库支持秒级别即可，因此提供dbtime.NormalDate和dbtime.NormalDatetime来支持。
+他们都内置了对json序列化的支持。序列化格式通过dbtime.DateFormat和dbtime.DatetimeFormat来设置，他们缺省是yyyy-MM-dd格式。

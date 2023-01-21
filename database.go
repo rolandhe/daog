@@ -3,11 +3,14 @@ package daog
 import (
 	"context"
 	"database/sql"
+	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"strings"
 	"time"
 )
+
+var invalidShardingDatasourceKey error = errors.New("invalid shard key")
 
 type DbConf struct {
 	DbUrl    string
@@ -46,7 +49,25 @@ func NewDatasource(conf *DbConf) (Datasource, error) {
 		db.SetConnMaxLifetime(time.Duration(int64(conf.Life) * 1e9))
 	}
 
-	return &database{db, conf.LogSQL}, nil
+	return &singleDatasource{db, conf.LogSQL}, nil
+}
+
+func NewShardingDatasource(confs []*DbConf, policy DatasourceShardingPolicy) (Datasource, error) {
+	var dbs []Datasource
+	for _, conf := range confs {
+		ds, err := NewDatasource(conf)
+		if err != nil {
+			for _, sds := range dbs {
+				sds.Shutdown()
+			}
+			return nil, err
+		}
+		dbs = append(dbs, ds)
+	}
+	if len(dbs) == 0 {
+		return nil, errors.New("no db confs")
+	}
+	return &shardingDatasource{dbs, policy}, nil
 }
 
 type Datasource interface {
@@ -55,18 +76,56 @@ type Datasource interface {
 	IsLogSQL() bool
 }
 
-type database struct {
+type DatasourceShardingPolicy interface {
+	Shard(shardKey any, count int) (int, error)
+}
+
+type ModInt64ShardingDatasourcePolicy int64
+
+func (h ModInt64ShardingDatasourcePolicy) Shard(shardKey any, count int) (int, error) {
+	key, ok := shardKey.(int64)
+	if !ok {
+		return 0, invalidShardingDatasourceKey
+	}
+	return int(key % int64(count)), nil
+}
+
+type singleDatasource struct {
 	db     *sql.DB
 	logSQL bool
 }
 
-func (db *database) getDB(ctx context.Context) *sql.DB {
+func (db *singleDatasource) getDB(ctx context.Context) *sql.DB {
 	return db.db
 }
-func (db *database) Shutdown() {
+func (db *singleDatasource) Shutdown() {
 	db.db.Close()
 }
 
-func (db *database) IsLogSQL() bool {
+func (db *singleDatasource) IsLogSQL() bool {
 	return db.logSQL
+}
+
+type shardingDatasource struct {
+	singleDatasource []Datasource
+	policy           DatasourceShardingPolicy
+}
+
+func (db *shardingDatasource) getDB(ctx context.Context) *sql.DB {
+	key := GetDatasourceShardingKeyFromCtx(ctx)
+	index, err := db.policy.Shard(key, len(db.singleDatasource))
+	if err != nil {
+		DaogLogError(ctx, err)
+		return nil
+	}
+	return db.singleDatasource[index].getDB(ctx)
+}
+func (db *shardingDatasource) Shutdown() {
+	for _, sds := range db.singleDatasource {
+		sds.Shutdown()
+	}
+}
+
+func (db *shardingDatasource) IsLogSQL() bool {
+	return db.singleDatasource[0].IsLogSQL()
 }

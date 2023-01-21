@@ -18,7 +18,7 @@ func (c *NormalDate) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	t, err := time.Parse("2006-01-02", value) //parse time
+	t, err := time.Parse(DateFormat, value) //parse time
 	if err != nil {
 		return err
 	}
@@ -27,5 +27,5 @@ func (c *NormalDate) UnmarshalJSON(b []byte) error {
 }
 
 func (c NormalDate) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + time.Time(c).Format("2006-01-02") + `"`), nil
+	return []byte(`"` + time.Time(c).Format(DateFormat) + `"`), nil
 }
