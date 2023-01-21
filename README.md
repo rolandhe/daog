@@ -1,6 +1,10 @@
-# 轻量、高性能，仅支持mysql
+# 轻量、高性能
 daog是轻量级的数据库访问组件，它并不能称之为orm组件，提供了一组函数用以实现常用的数据库访问功能。
 它是高性能的，与原生的使用sql包函数相比，没有性能损耗，这是因为，它并没有使用反射技术，而是使用编译技术把create table sql语句编译成daog需要的go代码。
+它目前仅支持mysql。
+
+设计思路来源于java的[orm框架sampleGenericDao](https://github.com/tiandarwin/simpleGenericDao)和protobuf的编译思路。之所以选择编译
+而没有使用反射，是因为基于编译的抽象没有性能损耗。
 
 ## 编译组件
 
