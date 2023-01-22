@@ -1,5 +1,7 @@
 package daog
 
+import "time"
+
 func GetById[T any](id int64, meta *TableMeta[T], tc *TransContext) (*T, error) {
 	m := NewMatcher()
 	fieldId := "id"
@@ -33,7 +35,8 @@ func QueryListMatcher[T any](m Matcher, meta *TableMeta[T], tc *TransContext) ([
 	}()
 	sql, args := selectQuery(meta, tc.ctx, m)
 	if tc.LogSQL {
-		DaogLogExecSQL(tc.ctx, sql, args)
+		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)
+		defer traceLogSQLAfter(tc.ctx, sqlMd5, time.Now().UnixMilli())
 	}
 	rows, err := tc.conn.QueryContext(tc.ctx, sql, args...)
 	if err != nil {
@@ -65,7 +68,8 @@ func QueryOneMatcher[T any](m Matcher, meta *TableMeta[T], tc *TransContext) (*T
 		}
 	}()
 	if tc.LogSQL {
-		DaogLogExecSQL(tc.ctx, sql, args)
+		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)
+		defer traceLogSQLAfter(tc.ctx, sqlMd5, time.Now().UnixMilli())
 	}
 	rows, err := tc.conn.QueryContext(tc.ctx, sql, args...)
 	if err != nil {
@@ -98,7 +102,8 @@ func QuerySQL[T any](tc *TransContext, mapper RowMapper[T], sql string, args ...
 		}
 	}()
 	if tc.LogSQL {
-		DaogLogExecSQL(tc.ctx, sql, args)
+		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)
+		defer traceLogSQLAfter(tc.ctx, sqlMd5, time.Now().UnixMilli())
 	}
 	rows, err := tc.conn.QueryContext(tc.ctx, sql, args...)
 	if err != nil {

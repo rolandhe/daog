@@ -3,6 +3,7 @@ package daog
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 func Insert[T any](ins *T, meta *TableMeta[T], tc *TransContext) (int64, error) {
@@ -52,7 +53,8 @@ func execInsert(tc *TransContext, sql string, args []any, auto bool) (int64, int
 	}()
 
 	if tc.LogSQL {
-		DaogLogExecSQL(tc.ctx, sql, args)
+		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)
+		defer traceLogSQLAfter(tc.ctx, sqlMd5, time.Now().UnixMilli())
 	}
 	result, err := tc.conn.ExecContext(tc.ctx, sql, args...)
 	if err != nil {
