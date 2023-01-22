@@ -305,9 +305,11 @@ daog缺省支持分库，分库策略需要您实现DatasourceShardingPolicy接�
 TransContext.LogSQL属性为每个事务上下文设置，更细粒度的控制日志输出。
 
 日志的输出实现，缺省是调用标准库的log包，您也可以通过配置daog包的3个全局函数来修改：
-* DaogLogErrorFunc
-* DaogLogInfoFunc
-* DaogLogExecSQLFunc
+* LogError
+* LogInfo
+* LogExecSQL
+
+GetTraceIdFromContext函数可以从context.Context中读取traceId
 
 ## 日期
 

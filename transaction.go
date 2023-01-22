@@ -102,7 +102,7 @@ func GetTraceIdFromContext(ctx context.Context) string {
 	return trace
 }
 
-func getTableShardingKeyFromCtx(ctx context.Context) any {
+func GetTableShardingKeyFromCtx(ctx context.Context) any {
 	mapAny := ctx.Value(CTXVALUES)
 	if mapAny == nil {
 		return nil

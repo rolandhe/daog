@@ -16,7 +16,7 @@ func GetTableName[T any](ctx context.Context, meta *TableMeta[T]) string {
 	tableName := meta.Table
 
 	if meta.ShardingFunc != nil {
-		shardingKey := getTableShardingKeyFromCtx(ctx)
+		shardingKey := GetTableShardingKeyFromCtx(ctx)
 		tableName = meta.ShardingFunc(tableName, shardingKey)
 	}
 	return tableName
