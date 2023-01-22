@@ -115,7 +115,7 @@ func (db *shardingDatasource) getDB(ctx context.Context) *sql.DB {
 	key := GetDatasourceShardingKeyFromCtx(ctx)
 	index, err := db.policy.Shard(key, len(db.singleDatasource))
 	if err != nil {
-		DaogLogError(ctx, err)
+		LogError(ctx, err)
 		return nil
 	}
 	return db.singleDatasource[index].getDB(ctx)

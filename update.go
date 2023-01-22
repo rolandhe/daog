@@ -6,9 +6,9 @@ import (
 )
 
 func Update[T any](ins *T, meta *TableMeta[T], tc *TransContext) (int64, error) {
-	idValue := meta.LookupFieldFunc("id", ins, false)
+	idValue := meta.LookupFieldFunc(TableIdColumnName, ins, false)
 	m := NewMatcher()
-	fieldId := "id"
+	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
@@ -36,7 +36,7 @@ func UpdateList[T any](insList []*T, meta *TableMeta[T], tc *TransContext) (int6
 
 func UpdateById[T any](modifier Modifier, id int64, meta *TableMeta[T], tc *TransContext) (int64, error) {
 	m := NewMatcher()
-	fieldId := "id"
+	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
@@ -46,7 +46,7 @@ func UpdateById[T any](modifier Modifier, id int64, meta *TableMeta[T], tc *Tran
 
 func UpdateByIds[T any](modifier Modifier, ids []int64, meta *TableMeta[T], tc *TransContext) (int64, error) {
 	m := NewMatcher()
-	fieldId := "id"
+	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}

@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const TableIdColumnName = "id"
+
 func GetTableName[T any](ctx context.Context, meta *TableMeta[T]) string {
 	tableName := meta.Table
 
@@ -108,7 +110,7 @@ func buildInsInfoOfRow[T any](meta *TableMeta[T]) (*T, []any) {
 }
 
 func forError(tc *TransContext) {
-	DaogLogInfo(tc.ctx, "met for Error")
+	LogInfo(tc.ctx, "met for Error")
 	if tc.txRequest == txrequest.RequestNone {
 		return
 	}
@@ -132,15 +134,15 @@ func traceLogSQLBefore(ctx context.Context, sql string, args []any) string {
 	md5data := []byte(sql)
 	argJson, err := json.Marshal(args)
 	if err != nil {
-		DaogLogError(ctx, err)
+		LogError(ctx, err)
 	} else {
 		md5data = append(md5data, argJson...)
 	}
 	sqlMd5 := fmt.Sprintf("%X", md5.Sum(md5data))
-	DaogLogExecSQL(ctx, sql, argJson, sqlMd5)
+	LogExecSQL(ctx, sql, argJson, sqlMd5)
 	return sqlMd5
 }
 
 func traceLogSQLAfter(ctx context.Context, sqlMd5 string, startTime int64) {
-	DaogLogExecSQLAfter(ctx, sqlMd5, time.Now().UnixMilli()-startTime)
+	LogExecSQLAfter(ctx, sqlMd5, time.Now().UnixMilli()-startTime)
 }

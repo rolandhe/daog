@@ -171,13 +171,13 @@ func (tc *TransContext) rollback() error {
 }
 
 func (tc *TransContext) Complete(e error) {
-	DaogLogError(tc.ctx, e)
+	LogError(tc.ctx, e)
 	if tc.status == tcStatusInvalid {
 		return
 	}
 	if tc.txRequest == txrequest.RequestNone {
 		if err := tc.conn.Close(); err != nil {
-			DaogLogError(tc.ctx, err)
+			LogError(tc.ctx, err)
 		}
 		tc.status = tcStatusInvalid
 		return
@@ -190,7 +190,7 @@ func (tc *TransContext) Complete(e error) {
 		}
 		err := tc.commit()
 		if err != nil {
-			DaogLogError(tc.ctx, err)
+			LogError(tc.ctx, err)
 			tc.rollbackAndClose()
 		}
 		tc.status = tcStatusInvalid
@@ -201,9 +201,9 @@ func (tc *TransContext) Complete(e error) {
 func (tc *TransContext) rollbackAndClose() {
 	var err error
 	if err = tc.rollback(); err != nil {
-		DaogLogError(tc.ctx, err)
+		LogError(tc.ctx, err)
 		if err := tc.conn.Close(); err != nil {
-			DaogLogError(tc.ctx, err)
+			LogError(tc.ctx, err)
 		}
 	}
 }

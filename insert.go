@@ -8,12 +8,12 @@ import (
 
 func Insert[T any](ins *T, meta *TableMeta[T], tc *TransContext) (int64, error) {
 	tableName := GetTableName(tc.ctx, meta)
-	var icolums []string
+	var insertColumns []string
 	var holder []string
 	var exclude map[string]int
 	if meta.AutoColumn == "" {
-		icolums = meta.Columns
-		for range icolums {
+		insertColumns = meta.Columns
+		for range insertColumns {
 			holder = append(holder, "?")
 		}
 	} else {
@@ -24,12 +24,12 @@ func Insert[T any](ins *T, meta *TableMeta[T], tc *TransContext) (int64, error) 
 			if column == meta.AutoColumn {
 				continue
 			}
-			icolums = append(icolums, column)
+			insertColumns = append(insertColumns, column)
 			holder = append(holder, "?")
 		}
 	}
 
-	sql := fmt.Sprintf("insert into %s(%s) values(%s)", tableName, strings.Join(icolums, ","), strings.Join(holder, ","))
+	sql := fmt.Sprintf("insert into %s(%s) values(%s)", tableName, strings.Join(insertColumns, ","), strings.Join(holder, ","))
 	args := meta.ExtractFieldValues(ins, false, exclude)
 	affect, lastId, err := execInsert(tc, sql, args, meta.AutoColumn != "")
 	if err != nil {

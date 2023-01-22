@@ -5,30 +5,30 @@ import (
 	"log"
 )
 
-type DaogLogErrorFunc func(ctx context.Context, err error)
-type DaogLogInfoFunc func(ctx context.Context, content string)
-type DaogLogExecSQLFunc func(ctx context.Context, sql string, argsJson []byte, sqlMd5 string)
-type DaogLogExecSQLAfterFunc func(ctx context.Context, sqlMd5 string, cost int64)
+type LogErrorFunc func(ctx context.Context, err error)
+type LogInfoFunc func(ctx context.Context, content string)
+type LogExecSQLFunc func(ctx context.Context, sql string, argsJson []byte, sqlMd5 string)
+type LogExecSQLAfterFunc func(ctx context.Context, sqlMd5 string, cost int64)
 
 var (
-	DaogLogError        DaogLogErrorFunc
-	DaogLogInfo         DaogLogInfoFunc
-	DaogLogExecSQL      DaogLogExecSQLFunc
-	DaogLogExecSQLAfter DaogLogExecSQLAfterFunc
+	LogError        LogErrorFunc
+	LogInfo         LogInfoFunc
+	LogExecSQL      LogExecSQLFunc
+	LogExecSQLAfter LogExecSQLAfterFunc
 )
 
 func init() {
-	DaogLogError = func(ctx context.Context, err error) {
+	LogError = func(ctx context.Context, err error) {
 		log.Printf("tid=%s,err: %v\n", GetTraceIdFromContext(ctx), err)
 	}
-	DaogLogInfo = func(ctx context.Context, content string) {
+	LogInfo = func(ctx context.Context, content string) {
 		log.Printf("tid=%s,content: %s\n", GetTraceIdFromContext(ctx), content)
 	}
-	DaogLogExecSQL = func(ctx context.Context, sql string, argJson []byte, sqlMd5 string) {
+	LogExecSQL = func(ctx context.Context, sql string, argJson []byte, sqlMd5 string) {
 		traceId := GetTraceIdFromContext(ctx)
 		log.Printf("[Trace SQL] tid=%s,sqlMd5=%s,sql: %s, args:%s\n", traceId, sqlMd5, sql, string(argJson))
 	}
-	DaogLogExecSQLAfter = func(ctx context.Context, sqlMd5 string, cost int64) {
+	LogExecSQLAfter = func(ctx context.Context, sqlMd5 string, cost int64) {
 		traceId := GetTraceIdFromContext(ctx)
 		log.Printf("[Trace SQL] tid=%s,sqlMd5=%s,cost %d ms\n", traceId, sqlMd5, cost)
 	}

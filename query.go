@@ -4,7 +4,7 @@ import "time"
 
 func GetById[T any](id int64, meta *TableMeta[T], tc *TransContext) (*T, error) {
 	m := NewMatcher()
-	fieldId := "id"
+	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
@@ -14,7 +14,7 @@ func GetById[T any](id int64, meta *TableMeta[T], tc *TransContext) (*T, error) 
 
 func GetByIds[T any](ids []int64, meta *TableMeta[T], tc *TransContext) ([]*T, error) {
 	m := NewMatcher()
-	fieldId := "id"
+	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
