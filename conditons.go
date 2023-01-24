@@ -1,3 +1,7 @@
+// Package daog,A quickly mysql access component.
+//
+// Copyright 2023 The daog Authors. All rights reserved.
+
 package daog
 
 import (
@@ -5,6 +9,8 @@ import (
 	"strings"
 )
 
+// define "and","or" operand
+// define like style, %xx%, %s,s%
 const (
 	logicOpAnd     = "and"
 	logicOpOr      = "or"

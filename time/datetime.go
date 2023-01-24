@@ -1,3 +1,7 @@
+// Package dbtime,A quickly mysql access component.
+//
+// Copyright 2023 The daog Authors. All rights reserved.
+
 package dbtime
 
 import (

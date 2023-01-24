@@ -1,3 +1,6 @@
+// Package daog,A quickly mysql access component.
+//
+// Copyright 2023 The daog Authors. All rights reserved.
 package daog
 
 import (
@@ -12,10 +15,10 @@ import (
 type tcStatus int
 
 const (
-	TRACEID               = "trace-id"
-	CTXVALUES             = "values"
-	SHARDINGKEY           = "shardingKey"
-	DATASOURCESHARDINGKEY = "datasourceSharingKey"
+	TraceId               = "trace-id"
+	CtxValues             = "values"
+	ShardingKey           = "shardingKey"
+	DatasourceShardingKey = "datasourceSharingKey"
 
 	tcStatusInit      = tcStatus(0)
 	tcStatusCommitted = tcStatus(1)
@@ -51,7 +54,7 @@ func NewTransContext(datasource Datasource, txRequest txrequest.RequestStyle, tr
 func NewTransContextWithSharding(datasource Datasource, txRequest txrequest.RequestStyle, traceId string, shardingKey any, datasourceShardingKey any) (*TransContext, error) {
 	var conn *sql.Conn
 	var err error
-	ctx := buildContext(traceId, SHARDINGKEY, nil)
+	ctx := buildContext(traceId, ShardingKey, nil)
 	if conn, err = datasource.getDB(ctx).Conn(context.Background()); err != nil {
 		return nil, err
 	}
@@ -70,7 +73,7 @@ func NewTransContextWithSharding(datasource Datasource, txRequest txrequest.Requ
 }
 
 func GetDatasourceShardingKeyFromCtx(ctx context.Context) any {
-	mapAny := ctx.Value(CTXVALUES)
+	mapAny := ctx.Value(CtxValues)
 	if mapAny == nil {
 		return nil
 	}
@@ -78,11 +81,11 @@ func GetDatasourceShardingKeyFromCtx(ctx context.Context) any {
 	if !ok {
 		return nil
 	}
-	return mapValue[DATASOURCESHARDINGKEY]
+	return mapValue[DatasourceShardingKey]
 }
 
 func GetTraceIdFromContext(ctx context.Context) string {
-	values := ctx.Value(CTXVALUES)
+	values := ctx.Value(CtxValues)
 	if values == nil {
 		return ""
 	}
@@ -91,7 +94,7 @@ func GetTraceIdFromContext(ctx context.Context) string {
 	if !ok {
 		return ""
 	}
-	data, ok := v[TRACEID]
+	data, ok := v[TraceId]
 	if !ok {
 		return ""
 	}
@@ -103,7 +106,7 @@ func GetTraceIdFromContext(ctx context.Context) string {
 }
 
 func GetTableShardingKeyFromCtx(ctx context.Context) any {
-	mapAny := ctx.Value(CTXVALUES)
+	mapAny := ctx.Value(CtxValues)
 	if mapAny == nil {
 		return nil
 	}
@@ -111,7 +114,7 @@ func GetTableShardingKeyFromCtx(ctx context.Context) any {
 	if !ok {
 		return nil
 	}
-	return mapValue[SHARDINGKEY]
+	return mapValue[ShardingKey]
 }
 
 type TransContext struct {
@@ -209,14 +212,14 @@ func (tc *TransContext) rollbackAndClose() {
 }
 func buildContext(traceId string, shardingKey any, dataSourceSharingKey any) context.Context {
 	mp := map[string]any{}
-	mp[TRACEID] = traceId
+	mp[TraceId] = traceId
 	if shardingKey != nil {
-		mp[SHARDINGKEY] = shardingKey
+		mp[ShardingKey] = shardingKey
 	}
 	if dataSourceSharingKey != nil {
-		mp[DATASOURCESHARDINGKEY] = dataSourceSharingKey
+		mp[DatasourceShardingKey] = dataSourceSharingKey
 	}
 
-	ctx := context.WithValue(context.Background(), CTXVALUES, mp)
+	ctx := context.WithValue(context.Background(), CtxValues, mp)
 	return ctx
 }

@@ -1,3 +1,6 @@
+// Package daog,A quickly mysql access component.
+//
+// Copyright 2023 The daog Authors. All rights reserved.
 package daog
 
 import (
@@ -32,5 +35,3 @@ func (m *Modifier) toSQL(tableName string) (string, []any) {
 	}
 	return fmt.Sprintf("update %s set %s", tableName, strings.Join(modStmt, ",")), args
 }
-
-

@@ -1,3 +1,6 @@
+// Package daog,A quickly mysql access component.
+//
+// Copyright 2023 The daog Authors. All rights reserved.
 package daog
 
 func DeleteById[T any](id int64, meta *TableMeta[T], tc *TransContext) (int64, error) {
