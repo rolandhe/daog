@@ -100,7 +100,7 @@ func queryByMatcher() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	matcher := daog.NewMatcher().Like(entities.GroupInfoFields.Name, "roland", daog.LikeStyleRight).Lt(entities.GroupInfoFields.Id, 4)
+	matcher := daog.NewMatcher().Like(entities.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(entities.GroupInfoFields.Id, 4)
 	gs, err := daog.QueryListMatcher(matcher, entities.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)

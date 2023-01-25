@@ -222,9 +222,9 @@ func (likec *likeCond) ToSQL(args []any) (string, []any) {
 	}
 	v := likec.value
 	switch likec.likeStyle {
-	case LikeStyleLeft:
-		v = "%" + v
 	case LikeStyleRight:
+		v = "%" + v
+	case LikeStyleLeft:
 		v = v + "%"
 	case LikeStyleAll:
 		v = "%" + v + "%"
