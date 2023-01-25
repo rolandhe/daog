@@ -20,11 +20,8 @@ const (
 	ShardingKey           = "shardingKey"
 	DatasourceShardingKey = "datasourceSharingKey"
 
-	tcStatusInit      = tcStatus(0)
-	tcStatusCommitted = tcStatus(1)
-	tcStatusRollback  = tcStatus(2)
-	tcStatusFailed    = tcStatus(3)
-	tcStatusInvalid   = tcStatus(4)
+	tcStatusInit    = tcStatus(1)
+	tcStatusInvalid = tcStatus(4)
 )
 
 var invalidTcStatus = errors.New("invalid tc status")
@@ -39,6 +36,7 @@ func NewTransContext(datasource Datasource, txRequest txrequest.RequestStyle, tr
 	}
 	tc := &TransContext{
 		txRequest: txRequest,
+		status:    tcStatusInit,
 		ctx:       ctx,
 		conn:      conn,
 		LogSQL:    datasource.IsLogSQL(),
@@ -60,6 +58,7 @@ func NewTransContextWithSharding(datasource Datasource, txRequest txrequest.Requ
 	}
 	tc := &TransContext{
 		txRequest: txRequest,
+		status:    tcStatusInit,
 		ctx:       ctx,
 		conn:      conn,
 		LogSQL:    datasource.IsLogSQL(),
@@ -127,7 +126,7 @@ type TransContext struct {
 }
 
 func (tc *TransContext) begin() (err error) {
-	if tc.txRequest == txrequest.RequestNone || tc.tx != nil {
+	if tc.txRequest == txrequest.RequestNone {
 		return nil
 	}
 	tc.tx, err = tc.conn.BeginTx(context.Background(), &sql.TxOptions{
@@ -143,8 +142,8 @@ func (tc *TransContext) check() error {
 	return nil
 }
 
-func (tc *TransContext) commit() error {
-	if tc.txRequest == txrequest.RequestNone || tc.tx == nil {
+func (tc *TransContext) commitAndReleaseConn() error {
+	if tc.txRequest == txrequest.RequestNone {
 		return nil
 	}
 	if tc.status != tcStatusInit {
@@ -152,25 +151,30 @@ func (tc *TransContext) commit() error {
 	}
 	err := tc.tx.Commit()
 	if err == nil {
-		tc.status = tcStatusCommitted
+		closeConn(tc)
 	}
 	return err
 }
 
-func (tc *TransContext) rollback() error {
-	if tc.txRequest == txrequest.RequestNone || tc.tx == nil {
+func (tc *TransContext) rollbackAndReleaseConn() error {
+	if tc.txRequest == txrequest.RequestNone {
 		return nil
 	}
 	if tc.status != tcStatusInit {
 		return errors.New(fmt.Sprintf("tc status error,%d", tc.status))
 	}
+
 	err := tc.tx.Rollback()
-	if err != nil {
-		tc.status = tcStatusFailed
-	} else {
-		tc.status = tcStatusRollback
+	if err == nil {
+		closeConn(tc)
 	}
 	return err
+}
+
+func closeConn(tc *TransContext) {
+	if err := tc.conn.Close(); err != nil {
+		LogError(tc.ctx, err)
+	}
 }
 
 func (tc *TransContext) Complete(e error) {
@@ -179,37 +183,20 @@ func (tc *TransContext) Complete(e error) {
 		return
 	}
 	if tc.txRequest == txrequest.RequestNone {
-		if err := tc.conn.Close(); err != nil {
-			LogError(tc.ctx, err)
-		}
+		closeConn(tc)
 		tc.status = tcStatusInvalid
 		return
 	}
 	if tc.status == tcStatusInit {
 		if e != nil {
-			tc.rollbackAndClose()
-			tc.status = tcStatusInvalid
-			return
-		}
-		err := tc.commit()
-		if err != nil {
-			LogError(tc.ctx, err)
-			tc.rollbackAndClose()
+			tc.rollbackAndReleaseConn()
+		} else {
+			tc.commitAndReleaseConn()
 		}
 		tc.status = tcStatusInvalid
 	}
-
 }
 
-func (tc *TransContext) rollbackAndClose() {
-	var err error
-	if err = tc.rollback(); err != nil {
-		LogError(tc.ctx, err)
-		if err := tc.conn.Close(); err != nil {
-			LogError(tc.ctx, err)
-		}
-	}
-}
 func buildContext(traceId string, shardingKey any, dataSourceSharingKey any) context.Context {
 	mp := map[string]any{}
 	mp[TraceId] = traceId

@@ -8,7 +8,6 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	txrequest "github.com/rolandhe/daog/tx"
 	"strings"
 	"time"
 )
@@ -110,14 +109,6 @@ func buildInsInfoOfRow[T any](meta *TableMeta[T]) (*T, []any) {
 	ins := new(T)
 	scanFields := meta.ExtractFieldValues(ins, true, nil)
 	return ins, scanFields
-}
-
-func forError(tc *TransContext) {
-	LogInfo(tc.ctx, "met for Error")
-	if tc.txRequest == txrequest.RequestNone {
-		return
-	}
-	tc.rollback()
 }
 
 func ConvertToAnySlice[T any](data []T) []any {

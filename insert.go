@@ -48,13 +48,10 @@ func Insert[T any](ins *T, meta *TableMeta[T], tc *TransContext) (int64, error) 
 }
 
 func execInsert(tc *TransContext, sql string, args []any, auto bool) (int64, int64, error) {
-	var err error
-	defer func() {
-		if err != nil {
-			forError(tc)
-		}
-	}()
-
+	err := tc.check()
+	if err != nil {
+		return 0, 0, err
+	}
 	if tc.LogSQL {
 		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)
 		defer traceLogSQLAfter(tc.ctx, sqlMd5, time.Now().UnixMilli())

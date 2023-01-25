@@ -31,11 +31,7 @@ func QueryListMatcher[T any](m Matcher, meta *TableMeta[T], tc *TransContext) ([
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			forError(tc)
-		}
-	}()
+
 	sql, args := selectQuery(meta, tc.ctx, m)
 	if tc.LogSQL {
 		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)
@@ -65,11 +61,7 @@ func QueryOneMatcher[T any](m Matcher, meta *TableMeta[T], tc *TransContext) (*T
 		return nil, err
 	}
 	sql, args := selectQuery(meta, tc.ctx, m)
-	defer func() {
-		if err != nil {
-			forError(tc)
-		}
-	}()
+
 	if tc.LogSQL {
 		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)
 		defer traceLogSQLAfter(tc.ctx, sqlMd5, time.Now().UnixMilli())
@@ -101,11 +93,7 @@ func QueryRawSQL[T any](tc *TransContext, mapper RowFieldPointMapper[T], sql str
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			forError(tc)
-		}
-	}()
+
 	if tc.LogSQL {
 		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)
 		defer traceLogSQLAfter(tc.ctx, sqlMd5, time.Now().UnixMilli())

@@ -30,8 +30,8 @@ func main() {
 
 	//create()
 	//query()
-	//queryByIds()
-	queryByMatcher()
+	queryByIds()
+	//queryByMatcher()
 	//update()
 
 	//deleteById()
@@ -133,9 +133,9 @@ func create() {
 	affect, err := daog.Insert(t, entities.GroupInfoMeta, tc)
 	fmt.Println(affect, t.Id, err)
 
-	//t.Name = "roland he"
-	//af, err := daog.Update(t, entities.GroupInfoMeta, tc)
-	//fmt.Println(af, err)
+	t.Name = "roland he"
+	af, err := daog.Update(t, entities.GroupInfoMeta, tc)
+	fmt.Println(af, err)
 }
 
 func update() {
