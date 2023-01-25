@@ -93,7 +93,9 @@ type RowFieldPointMapper[T any] interface {
 	ExtractScanFieldPoints(ins *T) []any
 }
 
-func QuerySQL[T any](tc *TransContext, mapper RowFieldPointMapper[T], sql string, args ...any) ([]*T, error) {
+// QueryRawSQL 执行原生select sql语句,返回行数据数组，行数据使用T struct描述
+// mapper, 它T的各个field指针提取出来并按照顺序生成一个slice，用于Row.Scan方法，把sql字段映射到T对象的各个Field上
+func QueryRawSQL[T any](tc *TransContext, mapper RowFieldPointMapper[T], sql string, args ...any) ([]*T, error) {
 	var err error
 	err = tc.check()
 	if err != nil {
