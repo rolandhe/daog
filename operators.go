@@ -142,7 +142,7 @@ func traceLogSQLBefore(ctx context.Context, sql string, args []any) string {
 		md5data = append(md5data, argJson...)
 	}
 	sqlMd5 := fmt.Sprintf("%X", md5.Sum(md5data))
-	LogExecSQL(ctx, sql, argJson, sqlMd5)
+	LogExecSQLBefore(ctx, sql, argJson, sqlMd5)
 	return sqlMd5
 }
 
