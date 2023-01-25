@@ -30,9 +30,11 @@ func main() {
 
 	//create()
 	//query()
-	queryByIds()
-	//queryByMatcher()
+	//queryByIds()
+	queryByMatcher()
 	//update()
+
+	//deleteById()
 }
 
 func query() {
@@ -41,6 +43,10 @@ func query() {
 		fmt.Println(err)
 		return
 	}
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	defer func() {
+		tc.Complete(err)
+	}()
 	g, err := daog.GetById(1, entities.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)
@@ -50,12 +56,31 @@ func query() {
 	fmt.Println(g)
 }
 
+func deleteById() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func() {
+		tc.Complete(err)
+	}()
+	g, err := daog.DeleteById(2, entities.GroupInfoMeta, tc)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("delete", g)
+}
+
 func queryByIds() {
 	tc, err := daog.NewTransContext(datasource, txrequest.RequestReadonly, "trace-1001")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	defer func() {
+		tc.Complete(err)
+	}()
 	gs, err := daog.GetByIds([]int64{1, 2}, entities.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)
@@ -71,7 +96,11 @@ func queryByMatcher() {
 		fmt.Println(err)
 		return
 	}
-	matcher := daog.NewMatcher().Eq(entities.GroupInfoFields.Name, "xiufeg").Lt(entities.GroupInfoFields.Id, 3)
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	defer func() {
+		tc.Complete(err)
+	}()
+	matcher := daog.NewMatcher().Like(entities.GroupInfoFields.Name, "roland", daog.LikeStyleRight).Lt(entities.GroupInfoFields.Id, 4)
 	gs, err := daog.QueryListMatcher(matcher, entities.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)
@@ -87,6 +116,9 @@ func create() {
 		fmt.Println(err)
 		return
 	}
+	defer func() {
+		tc.Complete(err)
+	}()
 	amount, err := decimal.NewFromString("128.0")
 	if err != nil {
 		fmt.Println(err)
@@ -101,9 +133,9 @@ func create() {
 	affect, err := daog.Insert(t, entities.GroupInfoMeta, tc)
 	fmt.Println(affect, t.Id, err)
 
-	t.Name = "roland he"
-	af, err := daog.Update(t, entities.GroupInfoMeta, tc)
-	fmt.Println(af, err)
+	//t.Name = "roland he"
+	//af, err := daog.Update(t, entities.GroupInfoMeta, tc)
+	//fmt.Println(af, err)
 }
 
 func update() {
@@ -115,7 +147,7 @@ func update() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	g, err := daog.GetById(1, entities.GroupInfoMeta, tc)
+	g, err := daog.GetById(4, entities.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)
 	}
