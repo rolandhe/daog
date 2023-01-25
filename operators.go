@@ -107,7 +107,7 @@ func buildModifierExec[T any](meta *TableMeta[T], ctx context.Context, modifier 
 }
 
 func buildInsInfoOfRow[T any](meta *TableMeta[T]) (*T, []any) {
-	ins := meta.InstanceFunc()
+	ins := new(T)
 	scanFields := meta.ExtractFieldValues(ins, true, nil)
 	return ins, scanFields
 }

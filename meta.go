@@ -5,7 +5,6 @@
 package daog
 
 type TableMeta[T any] struct {
-	InstanceFunc    func() *T
 	LookupFieldFunc func(columnName string, ins *T, point bool) any
 	ShardingFunc    func(tableName string, shardingKey any) string
 	Table           string
