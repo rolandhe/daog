@@ -212,6 +212,9 @@ func create() {
 		fmt.Println(err)
 		return
 	}
+	defer func() {
+		tc.Complete(err)
+	}()
 	amount, err := decimal.NewFromString("128.0")
 	if err != nil {
 		fmt.Println(err)
@@ -241,6 +244,9 @@ func queryByIds() {
 		fmt.Println(err)
 		return
 	}
+	defer func() {
+		tc.Complete(err)
+	}()
 	gs, err := daog.GetByIds([]int64{1, 2}, entities.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)
@@ -259,6 +265,10 @@ func queryByMatcher() {
 		fmt.Println(err)
 		return
 	}
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	defer func() {
+		tc.Complete(err)
+	}()
 	matcher := daog.NewMatcher().Eq(entities.GroupInfoFields.Name, "xiufeg").Lt(entities.GroupInfoFields.Id, 3)
 	gs, err := daog.QueryListMatcher(matcher, entities.GroupInfoMeta, tc)
 	if err != nil {
@@ -292,6 +302,26 @@ func update() {
 	g.Name = "Eric"
 	af, err := daog.Update(g, entities.GroupInfoMeta, tc)
 	fmt.Println(af, err)
+}
+```
+
+### 删除
+
+```
+func deleteById() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func() {
+		tc.Complete(err)
+	}()
+	g, err := daog.DeleteById(2, entities.GroupInfoMeta, tc)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("delete", g)
 }
 ```
 
