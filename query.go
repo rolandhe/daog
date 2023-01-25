@@ -89,11 +89,11 @@ func QueryOneMatcher[T any](m Matcher, meta *TableMeta[T], tc *TransContext) (*T
 	return ins, nil
 }
 
-type RowMapper[T any] interface {
-	Mapper(ins *T) []any
+type RowFieldPointMapper[T any] interface {
+	ExtractScanFieldPoints(ins *T) []any
 }
 
-func QuerySQL[T any](tc *TransContext, mapper RowMapper[T], sql string, args ...any) ([]*T, error) {
+func QuerySQL[T any](tc *TransContext, mapper RowFieldPointMapper[T], sql string, args ...any) ([]*T, error) {
 	var err error
 	err = tc.check()
 	if err != nil {
@@ -116,7 +116,7 @@ func QuerySQL[T any](tc *TransContext, mapper RowMapper[T], sql string, args ...
 	var inses []*T
 	for rows.Next() {
 		ins := new(T)
-		scanFields := mapper.Mapper(ins)
+		scanFields := mapper.ExtractScanFieldPoints(ins)
 		if err = rows.Scan(scanFields...); err != nil {
 			return nil, err
 		}
