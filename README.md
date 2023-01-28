@@ -86,8 +86,8 @@ create table group_info (
 package dal
 
 import (
-	"github.com/roland/daog"
-	dbtime "github.com/roland/daog/time"
+	"github.com/rolandhe/daog"
+	dbtime "github.com/rolandhe/daog/time"
 	"github.com/shopspring/decimal"
 )
 
