@@ -337,7 +337,8 @@ TransContext.LogSQL属性为每个事务上下文设置，更细粒度的控制�
 日志的输出实现，缺省是调用标准库的log包，您也可以通过配置daog包的3个全局函数来修改：
 * LogError
 * LogInfo
-* LogExecSQL
+* LogExecSQLBefore
+* LogExecSQLAfter
 
 GetTraceIdFromContext函数可以从context.Context中读取traceId
 
