@@ -10,6 +10,7 @@ import (
 	"github.com/shopspring/decimal"
 	"log"
 	"time"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var datasource daog.Datasource

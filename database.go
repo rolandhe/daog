@@ -8,7 +8,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"strings"
 	"time"
