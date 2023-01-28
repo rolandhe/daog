@@ -37,15 +37,24 @@ type SQLCond interface {
 
 type Matcher interface {
 	SQLCond
+	// Add 这个方法是个冗余方法，其实可以直接使用AddCond, 因为Matcher继承自SQLCond，冗余这个方法仅仅是让使用者更好的理解
 	Add(matcher Matcher) Matcher
 	AddCond(cond SQLCond) Matcher
+	// Eq equals 语义
 	Eq(column string, value any) Matcher
+	// Ne  not equals 语义
 	Ne(column string, value any) Matcher
+	// Lt less than语义
 	Lt(column string, value any) Matcher
+	// Lte less than or equals
 	Lte(column string, value any) Matcher
+	// Gt greater than
 	Gt(column string, value any) Matcher
+	// Gte greater than or equals
 	Gte(column string, value any) Matcher
+	// In xx in(?,?,...)
 	In(column string, values []any) Matcher
+	// NotIn xx not in(?,?,...)
 	NotIn(column string, values []any) Matcher
 	Like(column string, value string, likeStyle int) Matcher
 	Null(column string, not bool) Matcher
