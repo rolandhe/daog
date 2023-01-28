@@ -83,7 +83,7 @@ create table group_info (
 编译出的主代码：
 
 ```
-package entities
+package dal
 
 import (
 	"github.com/roland/daog"
@@ -236,17 +236,17 @@ func create() {
 		fmt.Println(err)
 		return
 	}
-	t := &entities.GroupInfo{
+	t := &dal.GroupInfo{
 		Name:        "roland",
 		MainData:    `{"a":102}`,
 		CreateAt:    dbtime.NormalDatetime(time.Now()),
 		TotalAmount: amount,
 	}
-	affect, err := daog.Insert(t, entities.GroupInfoMeta, tc)
+	affect, err := daog.Insert(t, dal.GroupInfoMeta, tc)
 	fmt.Println(affect, t.Id, err)
 
 	t.Name = "roland he"
-	af, err := daog.Update(t, entities.GroupInfoMeta, tc)
+	af, err := daog.Update(t, dal.GroupInfoMeta, tc)
 	fmt.Println(af, err)
 }
 ```
@@ -263,7 +263,7 @@ func queryByIds() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	gs, err := daog.GetByIds([]int64{1, 2}, entities.GroupInfoMeta, tc)
+	gs, err := daog.GetByIds([]int64{1, 2}, dal.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -285,8 +285,8 @@ func queryByMatcher() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	matcher := daog.NewMatcher().Eq(entities.GroupInfoFields.Name, "xiufeg").Lt(entities.GroupInfoFields.Id, 3)
-	gs, err := daog.QueryListMatcher(matcher, entities.GroupInfoMeta, tc)
+	matcher := daog.NewMatcher().Eq(dal.GroupInfoFields.Name, "xiufeg").Lt(dal.GroupInfoFields.Id, 3)
+	gs, err := daog.QueryListMatcher(matcher, dal.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -308,7 +308,7 @@ func update() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	g, err := daog.GetById(1, entities.GroupInfoMeta, tc)
+	g, err := daog.GetById(1, dal.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -316,7 +316,7 @@ func update() {
 	fmt.Println("query", string(j))
 
 	g.Name = "Eric"
-	af, err := daog.Update(g, entities.GroupInfoMeta, tc)
+	af, err := daog.Update(g, dal.GroupInfoMeta, tc)
 	fmt.Println(af, err)
 }
 ```
@@ -333,7 +333,7 @@ func deleteById() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	g, err := daog.DeleteById(2, entities.GroupInfoMeta, tc)
+	g, err := daog.DeleteById(2, dal.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -356,7 +356,7 @@ func queryByIdsUsingDao() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	gs, err := entities.GroupInfoDao.GetByIds([]int64{1, 2}, tc)
+	gs, err := dal.GroupInfoDao.GetByIds([]int64{1, 2}, tc)
 	if err != nil {
 		fmt.Println(err)
 	}
