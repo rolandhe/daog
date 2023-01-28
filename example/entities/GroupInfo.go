@@ -69,6 +69,11 @@ var  GroupInfoMeta = &daog.TableMeta[GroupInfo]{
     },
 }
 
+var GroupInfoDao daog.QuickDao[GroupInfo] = &struct {
+	daog.QuickDao[GroupInfo]
+}{
+	daog.NewBaseQuickDao(GroupInfoMeta),
+}
 
 type GroupInfo struct {
     Id int64

@@ -69,6 +69,11 @@ var  UserInfoMeta = &daog.TableMeta[UserInfo]{
     },
 }
 
+var UserInfoDao daog.QuickDao[UserInfo] = &struct {
+	daog.QuickDao[UserInfo]
+}{
+	daog.NewBaseQuickDao(UserInfoMeta),
+}
 
 type UserInfo struct {
     Id int64

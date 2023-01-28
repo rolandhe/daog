@@ -55,6 +55,16 @@ Matcher至支持多个条件组合.
 #### Modifier
 顾名思义，用于update表字段，它描述了一组字段名与对应值对，用于拼接update语句
 
+
+## 使用方式
+daog提供了两种数据方式形式：
+* 直接使用daog提供的函数，比如：
+```
+func Insert[T any](ins *T, meta *TableMeta[T], tc *TransContext) (int64, error) 
+func QueryListMatcher[T any](m Matcher, meta *TableMeta[T], tc *TransContext) ([]*T, error)
+```
+* 使用QuickDao接口，该接口支持模板参数，每个编译好的主文件中都有类似GroupInfoDao的变量，该变量是QuickDao[GroupInfo]类型，包含一个实现QuickDao[GroupInfo]的匿名struct对象，可以直接使用它来操作数据库，相对于使用函数，它少传递了TableMeta对象
+
 ## 使用实例
 可以参照代码的example
 
@@ -147,6 +157,11 @@ var  GroupInfoMeta = &daog.TableMeta[GroupInfo]{
 	},
 }
 
+var GroupInfoDao daog.QuickDao[GroupInfo] = &struct {
+	daog.QuickDao[GroupInfo]
+}{
+	daog.NewBaseQuickDao(GroupInfoMeta),
+}
 
 type GroupInfo struct {
 	Id int64
@@ -203,7 +218,8 @@ if err != nil {
 
 ```
 
-### 写表
+### 函数模式
+#### 写表
 
 ```
 func create() {
@@ -235,7 +251,7 @@ func create() {
 }
 ```
 
-### 读取数据
+#### 读取数据
 
 ```
 func queryByIds() {
@@ -257,7 +273,7 @@ func queryByIds() {
 }
 ```
 
-### 根据Matcher读取
+#### 根据Matcher读取
 ```
 func queryByMatcher() {
 	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
@@ -280,7 +296,7 @@ func queryByMatcher() {
 }
 ```
 
-### 先读再写
+#### 先读再写
 
 ```
 func update() {
@@ -305,7 +321,7 @@ func update() {
 }
 ```
 
-### 删除
+#### 删除
 
 ```
 func deleteById() {
@@ -322,6 +338,31 @@ func deleteById() {
 		fmt.Println(err)
 	}
 	fmt.Println("delete", g)
+}
+```
+
+### QuickDao接口模式
+使用方式和函数模式非常类似，只是少传递TableMeta参数，以下以一个query示例来说明一下。
+
+### 查询数据
+
+```
+func queryByIdsUsingDao() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestReadonly, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func() {
+		tc.Complete(err)
+	}()
+	gs, err := entities.GroupInfoDao.GetByIds([]int64{1, 2}, tc)
+	if err != nil {
+		fmt.Println(err)
+	}
+	j, _ := json.Marshal(gs)
+	fmt.Println("queryByIdsUsingDao", string(j))
+	fmt.Println(gs)
 }
 ```
 

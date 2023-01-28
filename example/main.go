@@ -30,7 +30,8 @@ func main() {
 
 	//create()
 	//query()
-	queryByIds()
+	//queryByIds()
+	queryByIdsUsingDao()
 	//queryByMatcher()
 	//update()
 
@@ -87,6 +88,24 @@ func queryByIds() {
 	}
 	j, _ := json.Marshal(gs)
 	fmt.Println("queryByIds", string(j))
+	fmt.Println(gs)
+}
+
+func queryByIdsUsingDao() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestReadonly, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func() {
+		tc.Complete(err)
+	}()
+	gs, err := entities.GroupInfoDao.GetByIds([]int64{1, 2}, tc)
+	if err != nil {
+		fmt.Println(err)
+	}
+	j, _ := json.Marshal(gs)
+	fmt.Println("queryByIdsUsingDao", string(j))
 	fmt.Println(gs)
 }
 
