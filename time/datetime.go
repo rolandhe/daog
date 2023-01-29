@@ -15,7 +15,7 @@ type NormalDatetime time.Time
 func (ndt NormalDatetime) Value() (driver.Value, error) {
 	return time.Time(ndt), nil
 }
-func (c *NormalDatetime) UnmarshalJSON(b []byte) error {
+func (ndt *NormalDatetime) UnmarshalJSON(b []byte) error {
 	value := strings.Trim(string(b), `"`) //get rid of "
 	if value == "" || value == "null" {
 		return nil
@@ -25,10 +25,10 @@ func (c *NormalDatetime) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	*c = NormalDatetime(t) //set result using the pointer
+	*ndt = NormalDatetime(t) //set result using the pointer
 	return nil
 }
 
-func (c NormalDatetime) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + time.Time(c).Format(DatetimeFormat) + `"`), nil
+func (ndt NormalDatetime) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + time.Time(ndt).Format(DatetimeFormat) + `"`), nil
 }
