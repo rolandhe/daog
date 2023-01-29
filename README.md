@@ -8,7 +8,7 @@ daog是轻量级的数据库访问组件，它并不能称之为orm组件，仅�
 
 ## 编译组件
 
-[complix](https://github.com/rolandhe/compilex) 是编译create table语句文件的工具，使用如下语句可以编译：
+[compilex](https://github.com/rolandhe/compilex) 是编译create table语句文件的工具，使用如下语句可以编译：
 
 ```
   ./compilex -i="sql file" -pkg packageName -o xxx/xx
