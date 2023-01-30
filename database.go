@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/rolandhe/daog/utils"
 	"log"
 	"strings"
 	"time"
@@ -36,7 +37,7 @@ func NewDatasource(conf *DbConf) (Datasource, error) {
 	}
 	db, err := sql.Open("mysql", dbUrl)
 	if err != nil {
-		log.Println(err)
+		log.Printf("goid=%d, %v\n", utils.QuickGetGoRoutineId(), err)
 		return nil, err
 	}
 	if conf.Size > 0 {

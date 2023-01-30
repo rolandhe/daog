@@ -10,12 +10,14 @@ import (
 	"errors"
 	"fmt"
 	txrequest "github.com/rolandhe/daog/tx"
+	"github.com/rolandhe/daog/utils"
 )
 
 type tcStatus int
 
 const (
 	TraceId               = "trace-id"
+	GoId                  = "goroutine-id"
 	CtxValues             = "values"
 	ShardingKey           = "shardingKey"
 	DatasourceShardingKey = "datasourceSharingKey"
@@ -29,7 +31,8 @@ var invalidTcStatus = errors.New("invalid tc status")
 func NewTransContext(datasource Datasource, txRequest txrequest.RequestStyle, traceId string) (*TransContext, error) {
 	var conn *sql.Conn
 	var err error
-	ctx := buildContext(traceId, nil, nil)
+	goroutineId := utils.QuickGetGoRoutineId()
+	ctx := buildContext(goroutineId, traceId, nil, nil)
 
 	if conn, err = datasource.getDB(ctx).Conn(context.Background()); err != nil {
 		return nil, err
@@ -52,7 +55,8 @@ func NewTransContext(datasource Datasource, txRequest txrequest.RequestStyle, tr
 func NewTransContextWithSharding(datasource Datasource, txRequest txrequest.RequestStyle, traceId string, shardingKey any, datasourceShardingKey any) (*TransContext, error) {
 	var conn *sql.Conn
 	var err error
-	ctx := buildContext(traceId, ShardingKey, nil)
+	goroutineId := utils.QuickGetGoRoutineId()
+	ctx := buildContext(goroutineId, traceId, ShardingKey, nil)
 	if conn, err = datasource.getDB(ctx).Conn(context.Background()); err != nil {
 		return nil, err
 	}
@@ -102,6 +106,27 @@ func GetTraceIdFromContext(ctx context.Context) string {
 		return ""
 	}
 	return trace
+}
+
+func GetGoRoutineIdFromContext(ctx context.Context) uint64 {
+	values := ctx.Value(CtxValues)
+	if values == nil {
+		return 0
+	}
+
+	v, ok := values.(map[string]any)
+	if !ok {
+		return 0
+	}
+	data, ok := v[GoId]
+	if !ok {
+		return 0
+	}
+	goid, ok := data.(uint64)
+	if !ok {
+		return 0
+	}
+	return goid
 }
 
 func GetTableShardingKeyFromCtx(ctx context.Context) any {
@@ -197,8 +222,9 @@ func (tc *TransContext) Complete(e error) {
 	}
 }
 
-func buildContext(traceId string, shardingKey any, dataSourceSharingKey any) context.Context {
+func buildContext(goroutineId uint64, traceId string, shardingKey any, dataSourceSharingKey any) context.Context {
 	mp := map[string]any{}
+	mp[GoId] = goroutineId
 	mp[TraceId] = traceId
 	if shardingKey != nil {
 		mp[ShardingKey] = shardingKey
