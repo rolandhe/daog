@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/rolandhe/daog"
 	"github.com/rolandhe/daog/example/dal"
 	dbtime "github.com/rolandhe/daog/time"
@@ -10,7 +11,6 @@ import (
 	"github.com/shopspring/decimal"
 	"log"
 	"time"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 var datasource daog.Datasource
@@ -56,6 +56,7 @@ func query() {
 	j, _ := json.Marshal(g)
 	fmt.Println("query", string(j))
 	fmt.Println(g)
+	fmt.Println(string(g.BinData))
 }
 
 func deleteById() {
@@ -147,6 +148,8 @@ func create() {
 	t := &dal.GroupInfo{
 		Name:        "roland",
 		MainData:    `{"a":102}`,
+		Content:     "hello world!!",
+		BinData:     []byte("byte data"),
 		CreateAt:    dbtime.NormalDatetime(time.Now()),
 		TotalAmount: amount,
 	}
