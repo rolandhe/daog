@@ -46,9 +46,8 @@ func query() {
 		return
 	}
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	defer func() {
-		tc.Complete(err)
-	}()
+	defer daog.CompleteTransContext(tc, err)
+
 	g, err := daog.GetById(1, dal.GroupInfoMeta, tc)
 	if err != nil {
 		fmt.Println(err)
