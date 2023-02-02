@@ -29,7 +29,7 @@ func init() {
 	}
 	LogExecSQLBefore = func(ctx context.Context, sql string, argJson []byte, sqlMd5 string) {
 		traceId := GetTraceIdFromContext(ctx)
-		log.Printf("[Trace SQL] goid=%d,tid=%s,sqlMd5=%s,sql: %s, args:%s\n", GetGoRoutineIdFromContext(ctx), traceId, sqlMd5, sql, string(argJson))
+		log.Printf("[Trace SQL] goid=%d,tid=%s,sqlMd5=%s,sql: %s, args:%s\n", GetGoRoutineIdFromContext(ctx), traceId, sqlMd5, sql, argJson)
 	}
 	LogExecSQLAfter = func(ctx context.Context, sqlMd5 string, cost int64) {
 		traceId := GetTraceIdFromContext(ctx)
