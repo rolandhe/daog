@@ -34,8 +34,8 @@ func main() {
 	//queryByIds()
 	//queryByIdsUsingDao()
 	//queryByMatcher()
-	//queryByMatcherOrder()
-	countByMatcher()
+	queryByMatcherOrder()
+	//countByMatcher()
 	//update()
 
 	//deleteById()
@@ -210,7 +210,7 @@ func update() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	g, err := daog.GetById(tc,4, dal.GroupInfoMeta)
+	g, err := daog.GetById(tc,5, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
