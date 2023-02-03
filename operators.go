@@ -8,6 +8,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -24,16 +25,18 @@ func GetTableName[T any](ctx context.Context, meta *TableMeta[T]) string {
 	return tableName
 }
 
-func buildSelectBase[T any](meta *TableMeta[T], ctx context.Context) string {
-	sfmt := "select %s from %s"
-
-	columnsStr := strings.Join(meta.Columns, ",")
-
-	return fmt.Sprintf(sfmt, columnsStr, GetTableName(ctx, meta))
+func buildSelectBase[T any](meta *TableMeta[T],viewColumns []string, ctx context.Context) string {
+	columnsStr := ""
+	if len(viewColumns) == 0 {
+		columnsStr = strings.Join(meta.Columns, ",")
+	} else {
+		columnsStr = strings.Join(viewColumns,",")
+	}
+	return "select " + columnsStr + " from " + GetTableName(ctx, meta)
 }
 
-func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher) (string, []any) {
-	base := buildSelectBase(meta, ctx)
+func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher, pager *Pager, orders []*Order,viewColumns []string) (string, []any) {
+	base := buildSelectBase(meta, viewColumns,ctx)
 	if matcher == nil {
 		return base, nil
 	}
@@ -42,6 +45,31 @@ func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher
 	}
 	var args []any
 	condi, args := matcher.ToSQL(args)
+
+	if condi == "" {
+		return base + buildQuerySuffix(pager, orders), nil
+	}
+
+	return base + " where " + condi + buildQuerySuffix(pager, orders), args
+}
+
+func countQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher) (string, []any) {
+	var base string
+	if meta.AutoColumn == "" {
+		base = "SELECT COUNT(*) FROM " + GetTableName(ctx, meta)
+	} else {
+		base = "SELECT COUNT(" + meta.AutoColumn + ") FROM " + GetTableName(ctx, meta)
+	}
+
+	if matcher == nil {
+		return base, nil
+	}
+	if matcher == nil {
+		return base, nil
+	}
+	var args []any
+	condi, args := matcher.ToSQL(args)
+
 	if condi == "" {
 		return base, nil
 	}
@@ -49,6 +77,38 @@ func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher
 	return base + " where " + condi, args
 }
 
+
+
+func buildQuerySuffix(pager *Pager, orders []*Order) string {
+	ordStat := ""
+	last := len(orders) - 1
+
+	for i, order := range orders {
+		if i == 0 {
+			ordStat = " order by " + order.ColumnName
+		} else {
+			ordStat = ordStat + order.ColumnName
+		}
+		if order.Desc {
+			ordStat = ordStat + " desc"
+		}
+		if i < last {
+			ordStat = ordStat + ","
+		}
+	}
+	if pager == nil {
+		return ordStat
+	}
+	limitStat := ""
+
+	if pager.PageNumber == 0 {
+		limitStat = " limit " + strconv.Itoa(pager.PageSize)
+	} else {
+		startPos := int64(pager.PageNumber) * int64(pager.PageSize)
+		limitStat = " limit " + strconv.FormatInt(startPos, 10) + "," + strconv.Itoa(pager.PageSize)
+	}
+	return ordStat + limitStat
+}
 func buildUpdateBase[T any](meta *TableMeta[T], ctx context.Context) string {
 	sfmt := "update %s set %s"
 
@@ -105,10 +165,12 @@ func buildModifierExec[T any](meta *TableMeta[T], ctx context.Context, modifier 
 	return base + " where " + condi, args
 }
 
-func buildInsInfoOfRow[T any](meta *TableMeta[T]) (*T, []any) {
+func buildInsInfoOfRow[T any](meta *TableMeta[T],viewColumns []string) (*T, []any) {
 	ins := new(T)
-	scanFields := meta.ExtractFieldValues(ins, true, nil)
-	return ins, scanFields
+	if len(viewColumns) == 0{
+		return ins,meta.ExtractFieldValues(ins, true, nil)
+	}
+	return ins, meta.ExtractFieldValuesByColumns(ins,true,viewColumns)
 }
 
 func ConvertToAnySlice[T any](data []T) []any {

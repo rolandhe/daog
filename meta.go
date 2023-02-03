@@ -23,3 +23,12 @@ func (meta *TableMeta[T]) ExtractFieldValues(ins *T, point bool, exclude map[str
 	}
 	return ret
 }
+
+func (meta *TableMeta[T]) ExtractFieldValuesByColumns(ins *T, point bool,columns []string) []any {
+	var ret []any
+
+	for _, column := range columns {
+		ret = append(ret, meta.LookupFieldFunc(column, ins, point))
+	}
+	return ret
+}

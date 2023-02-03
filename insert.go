@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func Insert[T any](ins *T, meta *TableMeta[T], tc *TransContext) (int64, error) {
+func Insert[T any](tc *TransContext,ins *T, meta *TableMeta[T]) (int64, error) {
 	tableName := GetTableName(tc.ctx, meta)
 	var insertColumns []string
 	var holder []string

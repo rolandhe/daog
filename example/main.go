@@ -32,8 +32,10 @@ func main() {
 	//create()
 	//query()
 	//queryByIds()
-	queryByIdsUsingDao()
+	//queryByIdsUsingDao()
 	//queryByMatcher()
+	//queryByMatcherOrder()
+	countByMatcher()
 	//update()
 
 	//deleteById()
@@ -48,7 +50,7 @@ func query() {
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
 	defer daog.CompleteTransContext(tc, err)
 
-	g, err := daog.GetById(1, dal.GroupInfoMeta, tc)
+	g, err := daog.GetById(tc,1, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -67,7 +69,7 @@ func deleteById() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	g, err := daog.DeleteById(2, dal.GroupInfoMeta, tc)
+	g, err := daog.DeleteById(tc,2, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -83,7 +85,7 @@ func queryByIds() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	gs, err := daog.GetByIds([]int64{1, 2}, dal.GroupInfoMeta, tc)
+	gs, err := daog.GetByIds(tc,[]int64{1, 2}, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -101,7 +103,7 @@ func queryByIdsUsingDao() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	gs, err := dal.GroupInfoDao.GetByIds([]int64{1, 2}, tc)
+	gs, err := dal.GroupInfoDao.GetByIds(tc,[]int64{1, 2})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -121,13 +123,52 @@ func queryByMatcher() {
 		tc.Complete(err)
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
-	gs, err := daog.QueryListMatcher(matcher, dal.GroupInfoMeta, tc)
+	gs, err := daog.QueryListMatcher(tc,matcher, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
 	j, _ := json.Marshal(gs)
 	fmt.Println("queryByMatcher", string(j))
 	fmt.Println(gs)
+}
+
+func queryByMatcherOrder() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	defer func() {
+		tc.Complete(err)
+	}()
+	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
+	gs, err := daog.QueryListMatcher(tc,matcher, dal.GroupInfoMeta,  daog.NewDescOrder(dal.GroupInfoFields.Id))
+	if err != nil {
+		fmt.Println(err)
+	}
+	j, _ := json.Marshal(gs)
+	fmt.Println("queryByMatcherOrder", string(j))
+	fmt.Println(gs)
+}
+
+func countByMatcher() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	defer func() {
+		tc.Complete(err)
+	}()
+	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
+	c, err := daog.Count(tc,matcher, dal.GroupInfoMeta)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("countByMatcher",c)
+	fmt.Println(c)
 }
 
 func create() {
@@ -152,11 +193,11 @@ func create() {
 		CreateAt:    dbtime.NormalDatetime(time.Now()),
 		TotalAmount: amount,
 	}
-	affect, err := daog.Insert(t, dal.GroupInfoMeta, tc)
+	affect, err := daog.Insert(tc,t, dal.GroupInfoMeta)
 	fmt.Println(affect, t.Id, err)
 
 	t.Name = "roland he"
-	af, err := daog.Update(t, dal.GroupInfoMeta, tc)
+	af, err := daog.Update(tc,t, dal.GroupInfoMeta)
 	fmt.Println(af, err)
 }
 
@@ -169,7 +210,7 @@ func update() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	g, err := daog.GetById(4, dal.GroupInfoMeta, tc)
+	g, err := daog.GetById(tc,4, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -177,7 +218,7 @@ func update() {
 	fmt.Println("query", string(j))
 
 	g.Name = "Eric"
-	af, err := daog.Update(g, dal.GroupInfoMeta, tc)
+	af, err := daog.Update(tc,g, dal.GroupInfoMeta)
 	fmt.Println(af, err)
 
 }
