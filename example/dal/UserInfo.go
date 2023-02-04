@@ -1,69 +1,63 @@
 package dal
 
 import (
-	"github.com/rolandhe/daog"
-	dbtime "github.com/rolandhe/daog/time"
-	"github.com/shopspring/decimal"
+    "github.com/rolandhe/daog"
+    "github.com/rolandhe/daog/ttypes"
+    
 )
 
 var UserInfoFields = struct {
-	Id       string
-	Name     string
-	Data     string
-	CreateAt string
-	Amount   string
+   Id string
+   Name string
+   CreateAt string
+   ModifyAt string
+   
 }{
-	"id",
-	"name",
-	"data",
-	"create_at",
-	"amount",
+    "id",
+    "name",
+    "create_at",
+    "modify_at",
+    
 }
 
-var UserInfoMeta = &daog.TableMeta[UserInfo]{
-	Table: "user_info",
-	Columns: []string{
-		"id",
-		"name",
-		"data",
-		"create_at",
-		"amount",
-	},
-	AutoColumn: "id",
-	LookupFieldFunc: func(columnName string, ins *UserInfo, point bool) any {
-		if "id" == columnName {
-			if point {
-				return &ins.Id
-			}
-			return ins.Id
-		}
-		if "name" == columnName {
-			if point {
-				return &ins.Name
-			}
-			return ins.Name
-		}
-		if "data" == columnName {
-			if point {
-				return &ins.Data
-			}
-			return ins.Data
-		}
-		if "create_at" == columnName {
-			if point {
-				return &ins.CreateAt
-			}
-			return ins.CreateAt
-		}
-		if "amount" == columnName {
-			if point {
-				return &ins.Amount
-			}
-			return ins.Amount
-		}
-
-		return nil
-	},
+var  UserInfoMeta = &daog.TableMeta[UserInfo]{
+    Table: "user_info",
+    Columns: []string {
+        "id",
+        "name",
+        "create_at",
+        "modify_at",
+        
+    },
+    AutoColumn: "id",
+    LookupFieldFunc: func(columnName string,ins *UserInfo,point bool) any {
+        if "id" == columnName {
+            if point {
+                 return &ins.Id
+            }
+            return ins.Id
+        }
+        if "name" == columnName {
+            if point {
+                 return &ins.Name
+            }
+            return ins.Name
+        }
+        if "create_at" == columnName {
+            if point {
+                 return &ins.CreateAt
+            }
+            return ins.CreateAt
+        }
+        if "modify_at" == columnName {
+            if point {
+                 return &ins.ModifyAt
+            }
+            return ins.ModifyAt
+        }
+        
+        return nil
+    },
 }
 
 var UserInfoDao daog.QuickDao[UserInfo] = &struct {
@@ -73,9 +67,9 @@ var UserInfoDao daog.QuickDao[UserInfo] = &struct {
 }
 
 type UserInfo struct {
-	Id       int64
-	Name     string
-	Data     string
-	CreateAt dbtime.NormalDatetime
-	Amount   decimal.Decimal
+    Id int64
+    Name string
+    CreateAt ttypes.NormalDatetime
+    ModifyAt ttypes.NilableDatetime
+    
 }

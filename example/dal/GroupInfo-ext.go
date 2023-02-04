@@ -1,5 +1,5 @@
 package dal
 
 func init() {
-	// you should do external working, e.g, setup GroupInfoMeta.ShardingFunc
+    // you should do external working, e.g, setup GroupInfoMeta.ShardingFunc
 }

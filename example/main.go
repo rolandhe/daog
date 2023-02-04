@@ -6,7 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rolandhe/daog"
 	"github.com/rolandhe/daog/example/dal"
-	dbtime "github.com/rolandhe/daog/time"
+	"github.com/rolandhe/daog/ttypes"
 	txrequest "github.com/rolandhe/daog/tx"
 	"github.com/shopspring/decimal"
 	"log"
@@ -29,12 +29,14 @@ func init() {
 func main() {
 	defer datasource.Shutdown()
 
+	//createUser()
 	//create()
 	//query()
+	queryUser()
 	//queryByIds()
 	//queryByIdsUsingDao()
 	//queryByMatcher()
-	queryByMatcherOrder()
+	//queryByMatcherOrder()
 	//countByMatcher()
 	//update()
 
@@ -50,14 +52,42 @@ func query() {
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
 	defer daog.CompleteTransContext(tc, err)
 
-	g, err := daog.GetById(tc,1, dal.GroupInfoMeta)
+	g, err := daog.GetById(tc,9, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
-	j, _ := json.Marshal(g)
+	j, err := json.Marshal(g)
+	if err != nil{
+		fmt.Println(err)
+	}
 	fmt.Println("query", string(j))
-	fmt.Println(g)
+	var rg dal.GroupInfo
+	json.Unmarshal(j,&rg)
+	fmt.Println(g.CreateAt)
 	fmt.Println(string(g.BinData))
+}
+
+func queryUser() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	defer daog.CompleteTransContext(tc, err)
+
+	g, err := daog.GetById(tc,1, dal.UserInfoMeta)
+	if err != nil {
+		fmt.Println(err)
+	}
+	j, err := json.Marshal(g)
+	if err != nil{
+		fmt.Println(err)
+	}
+	fmt.Println("queryUser", string(j))
+	var rg dal.UserInfo
+	json.Unmarshal(j,&rg)
+	fmt.Println(rg)
 }
 
 func deleteById() {
@@ -171,6 +201,7 @@ func countByMatcher() {
 	fmt.Println(c)
 }
 
+
 func create() {
 	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
 	if err != nil {
@@ -190,8 +221,9 @@ func create() {
 		MainData:    `{"a":102}`,
 		Content:     "hello world!!",
 		BinData:     []byte("byte data"),
-		CreateAt:    dbtime.NormalDatetime(time.Now()),
+		CreateAt:    ttypes.NormalDatetime(time.Now()),
 		TotalAmount: amount,
+		Remark:      *ttypes.LoadNilableString("haha"),
 	}
 	affect, err := daog.Insert(tc,t, dal.GroupInfoMeta)
 	fmt.Println(affect, t.Id, err)
@@ -199,6 +231,28 @@ func create() {
 	t.Name = "roland he"
 	af, err := daog.Update(tc,t, dal.GroupInfoMeta)
 	fmt.Println(af, err)
+}
+
+func createUser() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func() {
+		tc.Complete(err)
+	}()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	t := &dal.UserInfo{
+		Name:        "roland",
+		CreateAt:    ttypes.NormalDatetime(time.Now()),
+		ModifyAt: *ttypes.LoadNilableDatetime(time.Now()),
+	}
+	affect, err := daog.Insert(tc,t, dal.UserInfoMeta)
+	fmt.Println(affect, t.Id, err)
 }
 
 func update() {

@@ -9,9 +9,8 @@ create table group_info (
 ) ENGINE=innodb CHARACTER SET utf8mb4 comment 'axxx';
 
 create table user_info (
-    id bigint(20) not null AUTO_INCREMENT primary key,
-    `name` varchar(200) not null comment 'user name',
-    data json not null,
-    create_at datetime not null,
-    amount decimal(10,2) not null
+   id bigint(20) not null AUTO_INCREMENT primary key,
+   `name` varchar(200) not null comment 'user name',
+   create_at datetime not null,
+   modify_at datetime  null
 ) ENGINE=innodb CHARACTER SET utf8mb4 comment 'axxx';

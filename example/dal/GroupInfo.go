@@ -2,7 +2,7 @@ package dal
 
 import (
     "github.com/rolandhe/daog"
-    dbtime "github.com/rolandhe/daog/time"
+    "github.com/rolandhe/daog/ttypes"
     "github.com/shopspring/decimal"
 )
 
@@ -14,6 +14,7 @@ var GroupInfoFields = struct {
    BinData string
    CreateAt string
    TotalAmount string
+   Remark string
    
 }{
     "id",
@@ -23,6 +24,7 @@ var GroupInfoFields = struct {
     "bin_data",
     "create_at",
     "total_amount",
+    "remark",
     
 }
 
@@ -36,6 +38,7 @@ var  GroupInfoMeta = &daog.TableMeta[GroupInfo]{
         "bin_data",
         "create_at",
         "total_amount",
+        "remark",
         
     },
     AutoColumn: "id",
@@ -82,6 +85,12 @@ var  GroupInfoMeta = &daog.TableMeta[GroupInfo]{
             }
             return ins.TotalAmount
         }
+        if "remark" == columnName {
+            if point {
+                 return &ins.Remark
+            }
+            return ins.Remark
+        }
         
         return nil
     },
@@ -99,7 +108,8 @@ type GroupInfo struct {
     MainData string
     Content string
     BinData []byte
-    CreateAt dbtime.NormalDatetime
+    CreateAt ttypes.NormalDatetime
     TotalAmount decimal.Decimal
+    Remark ttypes.NilableString
     
 }

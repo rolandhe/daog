@@ -18,6 +18,10 @@ var (
 	LogInfo          LogInfoFunc
 	LogExecSQLBefore LogExecSQLBeforeFunc
 	LogExecSQLAfter  LogExecSQLAfterFunc
+
+	SimpleLogError = func(err error) {
+		log.Println(err)
+	}
 )
 
 func init() {
