@@ -5,6 +5,7 @@ package daog
 
 import (
 	"context"
+	"github.com/rolandhe/daog/utils"
 	"log"
 )
 
@@ -19,9 +20,7 @@ var (
 	LogExecSQLBefore LogExecSQLBeforeFunc
 	LogExecSQLAfter  LogExecSQLAfterFunc
 
-	SimpleLogError = func(err error) {
-		log.Println(err)
-	}
+	SimpleLogError  func(err error)
 )
 
 func init() {
@@ -38,5 +37,8 @@ func init() {
 	LogExecSQLAfter = func(ctx context.Context, sqlMd5 string, cost int64) {
 		traceId := GetTraceIdFromContext(ctx)
 		log.Printf("[Trace SQL] goid=%d,tid=%s,sqlMd5=%s,cost %d ms\n", GetGoRoutineIdFromContext(ctx), traceId, sqlMd5, cost)
+	}
+	SimpleLogError = func(err error) {
+		log.Printf("goid=%d, err: %v\n", utils.QuickGetGoRoutineId(),err)
 	}
 }
