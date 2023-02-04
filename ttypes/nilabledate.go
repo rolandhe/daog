@@ -12,7 +12,7 @@ type NilableDate struct {
 	sql.NullTime
 }
 
-func LoadNilableDate(d time.Time) *NilableDate {
+func FromDate(d time.Time) *NilableDate {
 	return &NilableDate{
 		sql.NullTime{d,true},
 	}

@@ -19,7 +19,7 @@ func main()  {
 		//2,
 		//"roland",
 		ttypes.NormalDatetime(time.Now()),
-		*ttypes.LoadNilableDatetime(time.Now()),
+		*ttypes.FromDatetime(time.Now()),
 	}
 	j,_ := json.Marshal(d)
 

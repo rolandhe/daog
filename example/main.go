@@ -223,7 +223,7 @@ func create() {
 		BinData:     []byte("byte data"),
 		CreateAt:    ttypes.NormalDatetime(time.Now()),
 		TotalAmount: amount,
-		Remark:      *ttypes.LoadNilableString("haha"),
+		Remark:      *ttypes.FromString("haha"),
 	}
 	affect, err := daog.Insert(tc,t, dal.GroupInfoMeta)
 	fmt.Println(affect, t.Id, err)
@@ -249,7 +249,7 @@ func createUser() {
 	t := &dal.UserInfo{
 		Name:        "roland",
 		CreateAt:    ttypes.NormalDatetime(time.Now()),
-		ModifyAt: *ttypes.LoadNilableDatetime(time.Now()),
+		ModifyAt: *ttypes.FromDatetime(time.Now()),
 	}
 	affect, err := daog.Insert(tc,t, dal.UserInfoMeta)
 	fmt.Println(affect, t.Id, err)

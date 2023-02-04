@@ -12,7 +12,7 @@ type NilableString struct {
 	sql.NullString
 }
 
-func LoadNilableString(s string) *NilableString {
+func FromString(s string) *NilableString {
 	return &NilableString{
 		sql.NullString{s,true},
 	}

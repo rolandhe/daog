@@ -60,8 +60,8 @@ Matcher至支持多个条件组合.
 daog提供了两种数据方式形式：
 * 直接使用daog提供的函数，比如：
 ```
-func Insert[T any](ins *T, meta *TableMeta[T], tc *TransContext) (int64, error) 
-func QueryListMatcher[T any](m Matcher, meta *TableMeta[T], tc *TransContext) ([]*T, error)
+func Insert[T any](tc *TransContextins *T, meta *TableMeta[T]) (int64, error) 
+func QueryListMatcher[T any](tc *TransContext,m Matcher, meta *TableMeta[T]) ([]*T, error)
 ```
 * 使用QuickDao接口，该接口支持模板参数，每个编译好的主文件中都有类似GroupInfoDao的变量，该变量是QuickDao[GroupInfo]类型，包含一个实现QuickDao[GroupInfo]的匿名struct对象，可以直接使用它来操作数据库，相对于使用函数，它少传递了TableMeta对象
 
@@ -392,5 +392,5 @@ golang的time.Time支持纳秒级别，但数据库支持秒级别即可，因�
 golang sql包支持NullString, NullTime, NullFloat64, Nullxxx类型，但这些类型没有实现json序列化、反序列化接口。daog仅仅支持NullString和NullTime,其他的不支持，
 这是因为实际的业务中，大部分情况要求字段是非空，尤其是数字数据类型。daog封装了NilableDate、NilableDatetime、NilableString三种类型，并提供一些函数用于简化开发，同时提供json序列化支持。
 
-* LoadNilableDatetime、LoadNilableDate、LoadNilableString函数用于把Time\string转换成Nilable对象；
+* FromDatetime、FromDate、FromString函数用于把Time\string转换成Nilable对象；
 * NilableDate{},NilableDatetime{},NilableString{}表示null对象
