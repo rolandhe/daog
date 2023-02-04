@@ -1,4 +1,4 @@
-// Package dbtime,A quickly mysql access component.
+// Package ttypes,A quickly mysql access component.
 //
 // Copyright 2023 The daog Authors. All rights reserved.
 
@@ -10,6 +10,9 @@ import (
 	"github.com/rolandhe/daog"
 	"strings"
 	"time"
+)
+var (
+	DatetimeFormat = "2006-01-02 15:04:05"
 )
 
 type NormalDatetime time.Time
