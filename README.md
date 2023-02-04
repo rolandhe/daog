@@ -242,11 +242,11 @@ func create() {
 		CreateAt:    dbtime.NormalDatetime(time.Now()),
 		TotalAmount: amount,
 	}
-	affect, err := daog.Insert(t, dal.GroupInfoMeta, tc)
+	affect, err := daog.Insert(tc,t, dal.GroupInfoMeta)
 	fmt.Println(affect, t.Id, err)
 
 	t.Name = "roland he"
-	af, err := daog.Update(t, dal.GroupInfoMeta, tc)
+	af, err := daog.Update(tc, t, dal.GroupInfoMeta)
 	fmt.Println(af, err)
 }
 ```
@@ -263,7 +263,7 @@ func queryByIds() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	gs, err := daog.GetByIds([]int64{1, 2}, dal.GroupInfoMeta, tc)
+	gs, err := daog.GetByIds(tc, []int64{1, 2}, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -286,7 +286,7 @@ func queryByMatcher() {
 		tc.Complete(err)
 	}()
 	matcher := daog.NewMatcher().Eq(dal.GroupInfoFields.Name, "xiufeg").Lt(dal.GroupInfoFields.Id, 3)
-	gs, err := daog.QueryListMatcher(matcher, dal.GroupInfoMeta, tc)
+	gs, err := daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -308,7 +308,7 @@ func update() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	g, err := daog.GetById(1, dal.GroupInfoMeta, tc)
+	g, err := daog.GetById(tc, 1, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -316,7 +316,7 @@ func update() {
 	fmt.Println("query", string(j))
 
 	g.Name = "Eric"
-	af, err := daog.Update(g, dal.GroupInfoMeta, tc)
+	af, err := daog.Update(tc, g, dal.GroupInfoMeta)
 	fmt.Println(af, err)
 }
 ```
@@ -333,7 +333,7 @@ func deleteById() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	g, err := daog.DeleteById(2, dal.GroupInfoMeta, tc)
+	g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -356,7 +356,7 @@ func queryByIdsUsingDao() {
 	defer func() {
 		tc.Complete(err)
 	}()
-	gs, err := dal.GroupInfoDao.GetByIds([]int64{1, 2}, tc)
+	gs, err := dal.GroupInfoDao.GetByIds(tc,[]int64{1, 2})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -385,5 +385,12 @@ GetTraceIdFromContext函数可以从context.Context中读取traceId
 
 ## 日期
 
-golang的time.Time支持纳秒级别，但数据库支持秒级别即可，因此提供dbtime.NormalDate和dbtime.NormalDatetime来支持。
-他们都内置了对json序列化的支持。序列化格式通过dbtime.DateFormat和dbtime.DatetimeFormat来设置，他们缺省是yyyy-MM-dd格式。
+golang的time.Time支持纳秒级别，但数据库支持秒级别即可，因此提供ttypes.NormalDate和ttypes.NormalDatetime来支持。
+他们都内置了对json序列化的支持。序列化格式通过ttypes.DateFormat和ttypes.DatetimeFormat来设置，他们缺省是yyyy-MM-dd格式。
+
+## null字段值
+golang sql包支持NullString, NullTime, NullFloat64, Nullxxx类型，但这些类型没有实现json序列化、反序列化接口。daog仅仅支持NullString和NullTime,其他的不支持，
+这是因为实际的业务中，大部分情况要求字段是非空，尤其是数字数据类型。daog封装了NilableDate、NilableDatetime、NilableString三种类型，并提供一些函数用于简化开发，同时提供json序列化支持。
+
+* LoadNilableDatetime、LoadNilableDate、LoadNilableString函数用于把Time\string转换成Nilable对象；
+* NilableDate{},NilableDatetime{},NilableString{}表示null对象
