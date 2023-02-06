@@ -228,7 +228,9 @@ func create() {
 		fmt.Println(err)
 		return
 	}
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	amount, err := decimal.NewFromString("128.0")
@@ -260,6 +262,12 @@ func queryByIds() {
 		fmt.Println(err)
 		return
 	}
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
+	defer func() {
+	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
+		tc.Complete(err)
+	}()
 	defer func() {
 		tc.Complete(err)
 	}()
@@ -282,7 +290,9 @@ func queryByMatcher() {
 		return
 	}
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	matcher := daog.NewMatcher().Eq(dal.GroupInfoFields.Name, "xiufeg").Lt(dal.GroupInfoFields.Id, 3)
@@ -305,7 +315,10 @@ func update() {
 		fmt.Println(err)
 		return
 	}
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	g, err := daog.GetById(tc, 1, dal.GroupInfoMeta)
@@ -330,7 +343,10 @@ func deleteById() {
 		fmt.Println(err)
 		return
 	}
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
@@ -353,7 +369,10 @@ func queryByIdsUsingDao() {
 		fmt.Println(err)
 		return
 	}
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	gs, err := dal.GroupInfoDao.GetByIds(tc,[]int64{1, 2})

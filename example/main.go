@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rolandhe/daog"
@@ -30,10 +31,10 @@ func main() {
 	defer datasource.Shutdown()
 
 	//createUser()
-	//create()
+	create()
 	//query()
 	//queryUser()
-	queryRawSQLForCount()
+	//queryRawSQLForCount()
 	//queryByIds()
 	//queryByIdsUsingDao()
 	//queryByMatcher()
@@ -51,7 +52,11 @@ func query() {
 		return
 	}
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	defer daog.CompleteTransContext(tc, err)
+	// 而且，必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
+	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
+		tc.Complete(err)
+	}()
 
 	g, err := daog.GetById(tc,9, dal.GroupInfoMeta)
 	if err != nil {
@@ -75,7 +80,11 @@ func queryUser() {
 		return
 	}
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	defer daog.CompleteTransContext(tc, err)
+	// 而且，必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
+	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
+		tc.Complete(err)
+	}()
 
 	g, err := daog.GetById(tc,1, dal.UserInfoMeta)
 	if err != nil {
@@ -97,7 +106,9 @@ func deleteById() {
 		fmt.Println(err)
 		return
 	}
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	g, err := daog.DeleteById(tc,2, dal.GroupInfoMeta)
@@ -113,7 +124,9 @@ func queryByIds() {
 		fmt.Println(err)
 		return
 	}
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	gs, err := daog.GetByIds(tc,[]int64{1, 2}, dal.GroupInfoMeta)
@@ -131,7 +144,9 @@ func queryByIdsUsingDao() {
 		fmt.Println(err)
 		return
 	}
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	gs, err := dal.GroupInfoDao.GetByIds(tc,[]int64{1, 2})
@@ -150,7 +165,9 @@ func queryByMatcher() {
 		return
 	}
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
@@ -170,7 +187,9 @@ func queryByMatcherOrder() {
 		return
 	}
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
@@ -190,7 +209,9 @@ func countByMatcher() {
 		return
 	}
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
@@ -209,7 +230,9 @@ func create() {
 		fmt.Println(err)
 		return
 	}
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	amount, err := decimal.NewFromString("128.0")
@@ -229,9 +252,15 @@ func create() {
 	affect, err := daog.Insert(tc,t, dal.GroupInfoMeta)
 	fmt.Println(affect, t.Id, err)
 
-	t.Name = "roland he"
+	t.Name = "rolandx"
 	af, err := daog.Update(tc,t, dal.GroupInfoMeta)
-	fmt.Println(af, err)
+
+	ef := func() (error,int) {
+		return errors.New("hehhe"),1
+	}
+
+	err,v:=ef()
+	fmt.Println(af, err,v)
 }
 
 func createUser() {
@@ -240,7 +269,9 @@ func createUser() {
 		fmt.Println(err)
 		return
 	}
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	if err != nil {
@@ -262,7 +293,9 @@ func update() {
 		fmt.Println(err)
 		return
 	}
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 	g, err := daog.GetById(tc,5, dal.GroupInfoMeta)
@@ -288,7 +321,9 @@ func queryRawSQLForCount() {
 		fmt.Println(err)
 		return
 	}
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
 

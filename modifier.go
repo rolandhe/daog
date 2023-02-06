@@ -13,6 +13,10 @@ type pair struct {
 	value  any
 }
 
+func NewModifier() *Modifier  {
+	return &Modifier{}
+}
+
 type Modifier struct {
 	modifies []*pair
 }

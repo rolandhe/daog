@@ -236,7 +236,3 @@ func buildContext(goroutineId uint64, traceId string, shardingKey any, dataSourc
 	ctx := context.WithValue(context.Background(), CtxValues, mp)
 	return ctx
 }
-
-func CompleteTransContext(tc *TransContext, e error) {
-	tc.Complete(e)
-}
