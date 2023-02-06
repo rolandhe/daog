@@ -32,7 +32,8 @@ func main() {
 	//createUser()
 	//create()
 	//query()
-	queryUser()
+	//queryUser()
+	queryRawSQLForCount()
 	//queryByIds()
 	//queryByIdsUsingDao()
 	//queryByMatcher()
@@ -275,4 +276,31 @@ func update() {
 	af, err := daog.Update(tc,g, dal.GroupInfoMeta)
 	fmt.Println(af, err)
 
+}
+
+type GroupInfoCounter struct {
+	Name string
+	Count int64
+}
+func queryRawSQLForCount() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestReadonly, "trace-100099")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func() {
+		tc.Complete(err)
+	}()
+
+	list, err := daog.QueryRawSQL(tc, func (ins *GroupInfoCounter) []any{
+		ret := make([]any,2)
+		ret[0] = &ins.Name
+		ret[1] = &ins.Count
+		return ret
+	},"select name,count(id) from group_info group by name")
+	if err != nil {
+		fmt.Println(err)
+	}
+	j, _ := json.Marshal(list)
+	fmt.Println("queryRawSQLForCount", string(j))
 }
