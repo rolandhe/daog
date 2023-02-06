@@ -13,20 +13,26 @@ type pair struct {
 	value  any
 }
 
-func NewModifier() *Modifier  {
-	return &Modifier{}
+func NewModifier() Modifier  {
+	return &internalModifier{}
 }
 
-type Modifier struct {
+type Modifier interface {
+	Add(column string, value any)  Modifier
+	toSQL(tableName string) (string, []any)
+}
+
+
+type internalModifier struct {
 	modifies []*pair
 }
 
-func (m *Modifier) Add(column string, value any) *Modifier {
+func (m *internalModifier) Add(column string, value any) Modifier {
 	m.modifies = append(m.modifies, &pair{column, value})
 	return m
 }
 
-func (m *Modifier) toSQL(tableName string) (string, []any) {
+func (m *internalModifier) toSQL(tableName string) (string, []any) {
 	l := len(m.modifies)
 	if l == 0 {
 		return "", nil
