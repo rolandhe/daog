@@ -171,7 +171,7 @@ type inCond struct {
 
 func (ic *inCond) ToSQL(args []any) (string, []any) {
 	if len(ic.values) == 0 {
-		return "", nil
+		return "", args
 	}
 	holders := make([]string, len(ic.values))
 	for i := 0; i < len(ic.values); i++ {
@@ -193,7 +193,7 @@ type betweenCond struct {
 
 func (btc *betweenCond) ToSQL(args []any) (string, []any) {
 	if btc.start == nil && btc.end == nil {
-		return "", nil
+		return "", args
 	}
 
 	if btc.start != nil && btc.end == nil {
