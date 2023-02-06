@@ -11,21 +11,25 @@ type Pager struct {
 	PageNumber int
 }
 
-type Orders struct {
+type OrdersBuilder struct {
 	orderItems []*Order
 }
 
-func (orders *Orders) NewOrder(columnName string) *Orders {
+func NewOrdersBuilder() *OrdersBuilder {
+	return &OrdersBuilder{}
+}
+
+func (orders *OrdersBuilder) NewOrder(columnName string) *OrdersBuilder {
 	orders.orderItems = append(orders.orderItems, NewOrder(columnName))
 	return orders
 }
 
-func (orders *Orders) NewDescOrder(columnName string) *Orders {
+func (orders *OrdersBuilder) NewDescOrder(columnName string) *OrdersBuilder {
 	orders.orderItems = append(orders.orderItems, NewDescOrder(columnName))
 	return orders
 }
 
-func (orders *Orders) Build() []*Order {
+func (orders *OrdersBuilder) Build() []*Order {
 	return orders.orderItems
 }
 
