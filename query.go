@@ -10,38 +10,42 @@ import (
 
 var invalidBatchSizeError = errors.New("page size must be greater than 0")
 
-func GetById[T any](tc *TransContext,id int64, meta *TableMeta[T], viewColumns ...string) (*T, error) {
+func GetAll[T any](tc *TransContext, meta *TableMeta[T], viewColumns ...string) ([]*T, error) {
+	return QueryPageListMatcherWithViewColumns(tc, nil, meta, viewColumns, nil)
+}
+
+func GetById[T any](tc *TransContext, id int64, meta *TableMeta[T], viewColumns ...string) (*T, error) {
 	m := NewMatcher()
 	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
 	m.Eq(fieldId, id)
-	return QueryOneMatcher(tc,m, meta, viewColumns...)
+	return QueryOneMatcher(tc, m, meta, viewColumns...)
 }
 
-func GetByIds[T any](tc *TransContext,ids []int64, meta *TableMeta[T], viewColumns ...string) ([]*T, error) {
+func GetByIds[T any](tc *TransContext, ids []int64, meta *TableMeta[T], viewColumns ...string) ([]*T, error) {
 	m := NewMatcher()
 	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
 	m.In(fieldId, ConvertToAnySlice(ids))
-	return QueryPageListMatcherWithViewColumns(tc,m, meta, viewColumns, nil)
+	return QueryPageListMatcherWithViewColumns(tc, m, meta, viewColumns, nil)
 }
 
-func QueryListMatcher[T any](tc *TransContext,m Matcher, meta *TableMeta[T],  orders ...*Order) ([]*T, error) {
-	return QueryPageListMatcher(tc,m, meta,  nil, orders...)
+func QueryListMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T], orders ...*Order) ([]*T, error) {
+	return QueryPageListMatcher(tc, m, meta, nil, orders...)
 }
 
-func QueryPageListMatcher[T any](tc *TransContext,m Matcher, meta *TableMeta[T],  pager *Pager, orders ...*Order) ([]*T, error) {
-	return QueryPageListMatcherWithViewColumns(tc,m,meta,nil,pager,orders...)
+func QueryPageListMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T], pager *Pager, orders ...*Order) ([]*T, error) {
+	return QueryPageListMatcherWithViewColumns(tc, m, meta, nil, pager, orders...)
 }
 
-func QueryPageListMatcherWithViewColumns[T any](tc *TransContext,m Matcher, meta *TableMeta[T],viewColumns []string,  pager *Pager, orders ...*Order) ([]*T, error) {
-	sql, args := selectQuery(meta, tc.ctx, m, pager, orders,viewColumns)
+func QueryPageListMatcherWithViewColumns[T any](tc *TransContext, m Matcher, meta *TableMeta[T], viewColumns []string, pager *Pager, orders ...*Order) ([]*T, error) {
+	sql, args := selectQuery(meta, tc.ctx, m, pager, orders, viewColumns)
 	return queryRawSQLCore(tc, func() (*T, []any) {
-		return buildInsInfoOfRow(meta,viewColumns)
+		return buildInsInfoOfRow(meta, viewColumns)
 	}, sql, args...)
 }
 
@@ -51,11 +55,11 @@ type BatchHandler[T any] func(batch []*T) error
 // batchSize 每批处理数据的最大容量，必须大于0，但不要设置太大，当设置为1时，退化成每条处理
 // handler 用于处理每批数据的函数
 // 查询数据最大上限数， 0 表示无上限
-func QueryListMatcherByBatchHandle[T any](tc *TransContext,m Matcher, meta *TableMeta[T], totalLimit int, batchSize int, handler BatchHandler[T],  orders ...*Order) error {
-	return QueryListMatcherWithViewColumnsByBatchHandle(tc,m,meta,nil,totalLimit,batchSize,handler,orders...)
+func QueryListMatcherByBatchHandle[T any](tc *TransContext, m Matcher, meta *TableMeta[T], totalLimit int, batchSize int, handler BatchHandler[T], orders ...*Order) error {
+	return QueryListMatcherWithViewColumnsByBatchHandle(tc, m, meta, nil, totalLimit, batchSize, handler, orders...)
 }
 
-func QueryListMatcherWithViewColumnsByBatchHandle[T any](tc *TransContext,m Matcher, meta *TableMeta[T], viewColumns []string, totalLimit int, batchSize int, handler BatchHandler[T],  orders ...*Order) error {
+func QueryListMatcherWithViewColumnsByBatchHandle[T any](tc *TransContext, m Matcher, meta *TableMeta[T], viewColumns []string, totalLimit int, batchSize int, handler BatchHandler[T], orders ...*Order) error {
 	if batchSize <= 0 {
 		return invalidBatchSizeError
 	}
@@ -63,20 +67,20 @@ func QueryListMatcherWithViewColumnsByBatchHandle[T any](tc *TransContext,m Matc
 	if totalLimit > 0 {
 		pager = &Pager{0, totalLimit}
 	}
-	sql, args := selectQuery(meta, tc.ctx, m, pager, orders,viewColumns)
+	sql, args := selectQuery(meta, tc.ctx, m, pager, orders, viewColumns)
 
 	return queryRawSQLByBatchHandleCore(tc, batchSize, handler, func() (*T, []any) {
-		return buildInsInfoOfRow(meta,viewColumns)
+		return buildInsInfoOfRow(meta, viewColumns)
 	}, sql, args...)
 }
 
-func QueryOneMatcher[T any](tc *TransContext,m Matcher, meta *TableMeta[T], viewColumns ...string) (*T, error) {
+func QueryOneMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T], viewColumns ...string) (*T, error) {
 	var err error
 	err = tc.check()
 	if err != nil {
 		return nil, err
 	}
-	sql, args := selectQuery(meta, tc.ctx, m, nil, nil,viewColumns)
+	sql, args := selectQuery(meta, tc.ctx, m, nil, nil, viewColumns)
 
 	if tc.LogSQL {
 		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)
@@ -90,7 +94,7 @@ func QueryOneMatcher[T any](tc *TransContext,m Matcher, meta *TableMeta[T], view
 	if !rows.Next() {
 		return nil, nil
 	}
-	ins, scanFields := buildInsInfoOfRow(meta,viewColumns)
+	ins, scanFields := buildInsInfoOfRow(meta, viewColumns)
 	if err = rows.Scan(scanFields...); err != nil {
 		return nil, err
 	}
@@ -115,7 +119,7 @@ func QueryRawSQLByBatchHandle[T any](tc *TransContext, batchSize int, handler Ba
 	}, sql, args...)
 }
 
-func Count[T any](tc *TransContext,m Matcher, meta *TableMeta[T]) (int64,error){
+func Count[T any](tc *TransContext, m Matcher, meta *TableMeta[T]) (int64, error) {
 	var err error
 	err = tc.check()
 	if err != nil {

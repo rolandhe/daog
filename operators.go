@@ -25,21 +25,18 @@ func GetTableName[T any](ctx context.Context, meta *TableMeta[T]) string {
 	return tableName
 }
 
-func buildSelectBase[T any](meta *TableMeta[T],viewColumns []string, ctx context.Context) string {
+func buildSelectBase[T any](meta *TableMeta[T], viewColumns []string, ctx context.Context) string {
 	columnsStr := ""
 	if len(viewColumns) == 0 {
 		columnsStr = strings.Join(meta.Columns, ",")
 	} else {
-		columnsStr = strings.Join(viewColumns,",")
+		columnsStr = strings.Join(viewColumns, ",")
 	}
 	return "select " + columnsStr + " from " + GetTableName(ctx, meta)
 }
 
-func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher, pager *Pager, orders []*Order,viewColumns []string) (string, []any) {
-	base := buildSelectBase(meta, viewColumns,ctx)
-	if matcher == nil {
-		return base, nil
-	}
+func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher, pager *Pager, orders []*Order, viewColumns []string) (string, []any) {
+	base := buildSelectBase(meta, viewColumns, ctx)
 	if matcher == nil {
 		return base, nil
 	}
@@ -76,8 +73,6 @@ func countQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher)
 
 	return base + " where " + condi, args
 }
-
-
 
 func buildQuerySuffix(pager *Pager, orders []*Order) string {
 	ordStat := ""
@@ -165,12 +160,12 @@ func buildModifierExec[T any](meta *TableMeta[T], ctx context.Context, modifier 
 	return base + " where " + condi, args
 }
 
-func buildInsInfoOfRow[T any](meta *TableMeta[T],viewColumns []string) (*T, []any) {
+func buildInsInfoOfRow[T any](meta *TableMeta[T], viewColumns []string) (*T, []any) {
 	ins := new(T)
-	if len(viewColumns) == 0{
-		return ins,meta.ExtractFieldValues(ins, true, nil)
+	if len(viewColumns) == 0 {
+		return ins, meta.ExtractFieldValues(ins, true, nil)
 	}
-	return ins, meta.ExtractFieldValuesByColumns(ins,true,viewColumns)
+	return ins, meta.ExtractFieldValuesByColumns(ins, true, viewColumns)
 }
 
 func ConvertToAnySlice[T any](data []T) []any {

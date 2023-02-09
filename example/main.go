@@ -37,7 +37,8 @@ func main() {
 	//queryRawSQLForCount()
 	//queryByIds()
 	//queryByIdsUsingDao()
-	queryByMatcher()
+	//queryByMatcher()
+	queryAll()
 	//queryByMatcherOrder()
 	//countByMatcher()
 	//update()
@@ -58,17 +59,17 @@ func query() {
 		tc.Complete(err)
 	}()
 
-	g, err := daog.GetById(tc,9, dal.GroupInfoMeta)
+	g, err := daog.GetById(tc, 9, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
 	j, err := json.Marshal(g)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("query", string(j))
 	var rg dal.GroupInfo
-	json.Unmarshal(j,&rg)
+	json.Unmarshal(j, &rg)
 	fmt.Println(g.CreateAt)
 	fmt.Println(string(g.BinData))
 }
@@ -86,17 +87,17 @@ func queryUser() {
 		tc.Complete(err)
 	}()
 
-	g, err := daog.GetById(tc,1, dal.UserInfoMeta)
+	g, err := daog.GetById(tc, 1, dal.UserInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
 	j, err := json.Marshal(g)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("queryUser", string(j))
 	var rg dal.UserInfo
-	json.Unmarshal(j,&rg)
+	json.Unmarshal(j, &rg)
 	fmt.Println(rg)
 }
 
@@ -111,7 +112,7 @@ func deleteById() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
-	g, err := daog.DeleteById(tc,2, dal.GroupInfoMeta)
+	g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -129,7 +130,7 @@ func queryByIds() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
-	gs, err := daog.GetByIds(tc,[]int64{1, 2}, dal.GroupInfoMeta)
+	gs, err := daog.GetByIds(tc, []int64{1, 2}, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -149,7 +150,7 @@ func queryByIdsUsingDao() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
-	gs, err := dal.GroupInfoDao.GetByIds(tc,[]int64{1, 2})
+	gs, err := dal.GroupInfoDao.GetByIds(tc, []int64{1, 2})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -171,12 +172,33 @@ func queryByMatcher() {
 		tc.Complete(err)
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
-	gs, err := daog.QueryListMatcher(tc,matcher, dal.GroupInfoMeta)
+	gs, err := daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
 	j, _ := json.Marshal(gs)
 	fmt.Println("queryByMatcher", string(j))
+	fmt.Println(gs)
+}
+
+func queryAll() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
+	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
+		tc.Complete(err)
+	}()
+	gs, err := daog.GetAll(tc, dal.GroupInfoMeta)
+	if err != nil {
+		fmt.Println(err)
+	}
+	j, _ := json.Marshal(gs)
+	fmt.Println("queryAll", string(j))
 	fmt.Println(gs)
 }
 
@@ -193,7 +215,7 @@ func queryByMatcherOrder() {
 		tc.Complete(err)
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
-	gs, err := daog.QueryListMatcher(tc,matcher, dal.GroupInfoMeta,  daog.NewDescOrder(dal.GroupInfoFields.Id))
+	gs, err := daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta, daog.NewDescOrder(dal.GroupInfoFields.Id))
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -215,14 +237,13 @@ func countByMatcher() {
 		tc.Complete(err)
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
-	c, err := daog.Count(tc,matcher, dal.GroupInfoMeta)
+	c, err := daog.Count(tc, matcher, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("countByMatcher",c)
+	fmt.Println("countByMatcher", c)
 	fmt.Println(c)
 }
-
 
 func create() {
 	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
@@ -249,18 +270,18 @@ func create() {
 		TotalAmount: amount,
 		Remark:      *ttypes.FromString("haha"),
 	}
-	affect, err := daog.Insert(tc,t, dal.GroupInfoMeta)
+	affect, err := daog.Insert(tc, t, dal.GroupInfoMeta)
 	fmt.Println(affect, t.Id, err)
 
 	t.Name = "rolandx"
-	af, err := daog.Update(tc,t, dal.GroupInfoMeta)
+	af, err := daog.Update(tc, t, dal.GroupInfoMeta)
 
-	ef := func() (error,int) {
-		return errors.New("hehhe"),1
+	ef := func() (error, int) {
+		return errors.New("hehhe"), 1
 	}
 
-	err,v:=ef()
-	fmt.Println(af, err,v)
+	err, v := ef()
+	fmt.Println(af, err, v)
 }
 
 func createUser() {
@@ -279,11 +300,11 @@ func createUser() {
 		return
 	}
 	t := &dal.UserInfo{
-		Name:        "roland",
-		CreateAt:    ttypes.NormalDatetime(time.Now()),
+		Name:     "roland",
+		CreateAt: ttypes.NormalDatetime(time.Now()),
 		ModifyAt: *ttypes.FromDatetime(time.Now()),
 	}
-	affect, err := daog.Insert(tc,t, dal.UserInfoMeta)
+	affect, err := daog.Insert(tc, t, dal.UserInfoMeta)
 	fmt.Println(affect, t.Id, err)
 }
 
@@ -298,7 +319,7 @@ func update() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.Complete(err)
 	}()
-	g, err := daog.GetById(tc,5, dal.GroupInfoMeta)
+	g, err := daog.GetById(tc, 5, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -306,15 +327,16 @@ func update() {
 	fmt.Println("query", string(j))
 
 	g.Name = "Eric"
-	af, err := daog.Update(tc,g, dal.GroupInfoMeta)
+	af, err := daog.Update(tc, g, dal.GroupInfoMeta)
 	fmt.Println(af, err)
 
 }
 
 type GroupInfoCounter struct {
-	Name string
+	Name  string
 	Count int64
 }
+
 func queryRawSQLForCount() {
 	tc, err := daog.NewTransContext(datasource, txrequest.RequestReadonly, "trace-100099")
 	if err != nil {
@@ -327,12 +349,12 @@ func queryRawSQLForCount() {
 		tc.Complete(err)
 	}()
 
-	list, err := daog.QueryRawSQL(tc, func (ins *GroupInfoCounter) []any{
-		ret := make([]any,2)
+	list, err := daog.QueryRawSQL(tc, func(ins *GroupInfoCounter) []any {
+		ret := make([]any, 2)
 		ret[0] = &ins.Name
 		ret[1] = &ins.Count
 		return ret
-	},"select name,count(id) from group_info group by name")
+	}, "select name,count(id) from group_info group by name")
 	if err != nil {
 		fmt.Println(err)
 	}
