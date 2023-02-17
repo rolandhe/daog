@@ -52,14 +52,11 @@ func query() {
 		fmt.Println(err)
 		return
 	}
-	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	// 而且，必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
-	}()
 
-	g, err := daog.GetById(tc, 9, dal.GroupInfoMeta)
+	g, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) (*dal.GroupInfo, error) {
+		return daog.GetById(tc, 9, dal.GroupInfoMeta)
+	})
+
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -80,14 +77,10 @@ func queryUser() {
 		fmt.Println(err)
 		return
 	}
-	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	// 而且，必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
-	}()
 
-	g, err := daog.GetById(tc, 1, dal.UserInfoMeta)
+	g, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) (*dal.UserInfo, error) {
+		return daog.GetById(tc, 1, dal.UserInfoMeta)
+	})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -107,16 +100,16 @@ func deleteById() {
 		fmt.Println(err)
 		return
 	}
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
-	}()
-	g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("delete", g)
+
+	daog.WrapTrans(tc, func(tc *daog.TransContext) error {
+		g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		fmt.Println("delete", g)
+		return err
+	})
 }
 
 func queryByIds() {
@@ -125,12 +118,11 @@ func queryByIds() {
 		fmt.Println(err)
 		return
 	}
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
-	}()
-	gs, err := daog.GetByIds(tc, []int64{1, 2}, dal.GroupInfoMeta)
+
+	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
+		return daog.GetByIds(tc, []int64{1, 2}, dal.GroupInfoMeta)
+	})
+
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -145,12 +137,11 @@ func queryByIdsUsingDao() {
 		fmt.Println(err)
 		return
 	}
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
-	}()
-	gs, err := dal.GroupInfoDao.GetByIds(tc, []int64{1, 2})
+
+	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
+		return dal.GroupInfoDao.GetByIds(tc, []int64{1, 2})
+	})
+
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -165,14 +156,13 @@ func queryByMatcher() {
 		fmt.Println(err)
 		return
 	}
-	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
-	}()
+
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
-	gs, err := daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta)
+
+	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
+		return daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta)
+	})
+
 	if err != nil {
 		fmt.Println(err)
 	}

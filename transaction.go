@@ -75,6 +75,24 @@ func NewTransContextWithSharding(datasource Datasource, txRequest txrequest.Requ
 	return tc, nil
 }
 
+func WrapTrans(tc *TransContext, workFn func(tc *TransContext) error) error {
+	var err error
+	defer func() {
+		tc.Complete(err)
+	}()
+	err = workFn(tc)
+	return err
+}
+
+func WrapTransWithResult[T any](tc *TransContext, workFn func(tc *TransContext) (T, error)) (T, error) {
+	var err error
+	defer func() {
+		tc.Complete(err)
+	}()
+	ret, err := workFn(tc)
+	return ret, err
+}
+
 func GetDatasourceShardingKeyFromCtx(ctx context.Context) any {
 	mapAny := ctx.Value(CtxValues)
 	if mapAny == nil {
