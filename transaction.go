@@ -28,6 +28,8 @@ const (
 
 var invalidTcStatus = errors.New("invalid tc status")
 
+var metRecover = errors.New("met recover")
+
 func NewTransContext(datasource Datasource, txRequest txrequest.RequestStyle, traceId string) (*TransContext, error) {
 	var conn *sql.Conn
 	var err error
@@ -78,6 +80,11 @@ func NewTransContextWithSharding(datasource Datasource, txRequest txrequest.Requ
 func WrapTrans(tc *TransContext, workFn func(tc *TransContext) error) error {
 	var err error
 	defer func() {
+		fetal := recover()
+		if fetal != nil {
+			DoRecoverOfTrans(err, tc)
+			panic(fetal)
+		}
 		tc.Complete(err)
 	}()
 	err = workFn(tc)
@@ -87,10 +94,23 @@ func WrapTrans(tc *TransContext, workFn func(tc *TransContext) error) error {
 func WrapTransWithResult[T any](tc *TransContext, workFn func(tc *TransContext) (T, error)) (T, error) {
 	var err error
 	defer func() {
+		fetal := recover()
+		if fetal != nil {
+			DoRecoverOfTrans(err, tc)
+			panic(fetal)
+		}
 		tc.Complete(err)
 	}()
 	ret, err := workFn(tc)
 	return ret, err
+}
+
+func DoRecoverOfTrans(err error, tc *TransContext) {
+	if err == nil {
+		tc.Complete(metRecover)
+	} else {
+		tc.Complete(err)
+	}
 }
 
 func GetDatasourceShardingKeyFromCtx(ctx context.Context) any {
