@@ -96,10 +96,10 @@ func buildQuerySuffix(pager *Pager, orders []*Order) string {
 	}
 	limitStat := ""
 
-	if pager.PageNumber == 0 {
+	if pager.PageNumber == 1 {
 		limitStat = " limit " + strconv.Itoa(pager.PageSize)
 	} else {
-		startPos := int64(pager.PageNumber) * int64(pager.PageSize)
+		startPos := int64(pager.PageNumber-1) * int64(pager.PageSize)
 		limitStat = " limit " + strconv.FormatInt(startPos, 10) + "," + strconv.Itoa(pager.PageSize)
 	}
 	return ordStat + limitStat

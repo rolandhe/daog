@@ -5,7 +5,7 @@ type Order struct {
 	Desc       bool
 }
 
-// Pager 分页参数结构，PageSize 每一页的大小，PageNumber 页码，从0算起
+// Pager 分页参数结构，PageSize 每一页的大小，PageNumber 页码，从1算起
 type Pager struct {
 	PageSize   int
 	PageNumber int
