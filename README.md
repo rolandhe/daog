@@ -228,11 +228,7 @@ func create() {
 		fmt.Println(err)
 		return
 	}
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
-	}()
+	
 	amount, err := decimal.NewFromString("128.0")
 	if err != nil {
 		fmt.Println(err)
@@ -241,15 +237,26 @@ func create() {
 	t := &dal.GroupInfo{
 		Name:        "roland",
 		MainData:    `{"a":102}`,
-		CreateAt:    dbtime.NormalDatetime(time.Now()),
+		Content:     "hello world!!",
+		BinData:     []byte("byte data"),
+		CreateAt:    ttypes.NormalDatetime(time.Now()),
 		TotalAmount: amount,
+		Remark:      *ttypes.FromString("haha"),
 	}
-	affect, err := daog.Insert(tc,t, dal.GroupInfoMeta)
-	fmt.Println(affect, t.Id, err)
-
-	t.Name = "roland he"
-	af, err := daog.Update(tc, t, dal.GroupInfoMeta)
-	fmt.Println(af, err)
+	daog.WrapTrans(tc, func(tc *daog.TransContext) error {
+		affect, err := daog.Insert(tc, t, dal.GroupInfoMeta)
+		fmt.Println(affect, t.Id, err)
+		if err != nil {
+			return err
+		}
+		t.Name = "rolandx"
+		af, err := daog.Update(tc, t, dal.GroupInfoMeta)
+		fmt.Println(af, err)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 ```
 
@@ -262,16 +269,11 @@ func queryByIds() {
 		fmt.Println(err)
 		return
 	}
-	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
-	}()
-	defer func() {
-		tc.Complete(err)
-	}()
-	gs, err := daog.GetByIds(tc, []int64{1, 2}, dal.GroupInfoMeta)
+
+	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
+		return daog.GetByIds(tc, []int64{1, 2}, dal.GroupInfoMeta)
+	})
+
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -289,14 +291,13 @@ func queryByMatcher() {
 		fmt.Println(err)
 		return
 	}
-	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
-	}()
-	matcher := daog.NewMatcher().Eq(dal.GroupInfoFields.Name, "xiufeg").Lt(dal.GroupInfoFields.Id, 3)
-	gs, err := daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta)
+
+	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
+
+	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
+		return daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta)
+	})
+
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -318,8 +319,8 @@ func update() {
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
-	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
+	    // 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
+		daog.DefferFinalTranSupportRecover(tc, err)
 	}()
 	g, err := daog.GetById(tc, 1, dal.GroupInfoMeta)
 	if err != nil {
@@ -346,8 +347,8 @@ func deleteById() {
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
-	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
+	    // 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
+		daog.DefferFinalTranSupportRecover(tc, err)
 	}()
 	g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
 	if err != nil {
@@ -356,6 +357,16 @@ func deleteById() {
 	fmt.Println("delete", g)
 }
 ```
+
+### 两种事务管理
+#### 委托式
+把所有的事务处理代码都内置到一个函数里，当然这个函数可以是匿名函数，也可以是命名函数，然后调用daog.WrapTrans或者daog.WrapTransWithResult来执行业务处理函数，
+在这种方式下，事务最终的提交或回滚不需要再额外处理。
+#### 自行处理式
+在创建TransContext后，需要手工处理事务的结束，必须通过一个匿名deffer函数来结束事务，匿名函数里调用daog.DefferFinalTranSupportRecover(tc, err)来最终结束事务。
+需要注意的是：
+* err在当前的函数里必须是全局的
+* 每一个会产生err的函数调用，都必须使用该全局err来接收，比如： err = XXX()
 
 ### QuickDao接口模式
 使用方式和函数模式非常类似，只是少传递TableMeta参数，以下以一个query示例来说明一下。
@@ -372,8 +383,8 @@ func queryByIdsUsingDao() {
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
-	// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
+	    // 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
+		daog.DefferFinalTranSupportRecover(tc, err)
 	}()
 	gs, err := dal.GroupInfoDao.GetByIds(tc,[]int64{1, 2})
 	if err != nil {

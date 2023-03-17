@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rolandhe/daog"
@@ -181,7 +180,7 @@ func queryAll() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
+		daog.DefferFinalTranSupportRecover(tc, err)
 	}()
 	gs, err := daog.GetAll(tc, dal.GroupInfoMeta)
 	if err != nil {
@@ -202,7 +201,7 @@ func queryByMatcherOrder() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
+		daog.DefferFinalTranSupportRecover(tc, err)
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
 	gs, err := daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta, daog.NewDescOrder(dal.GroupInfoFields.Id))
@@ -224,7 +223,7 @@ func countByMatcher() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
+		daog.DefferFinalTranSupportRecover(tc, err)
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
 	c, err := daog.Count(tc, matcher, dal.GroupInfoMeta)
@@ -241,11 +240,7 @@ func create() {
 		fmt.Println(err)
 		return
 	}
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
-	}()
+
 	amount, err := decimal.NewFromString("128.0")
 	if err != nil {
 		fmt.Println(err)
@@ -260,18 +255,20 @@ func create() {
 		TotalAmount: amount,
 		Remark:      *ttypes.FromString("haha"),
 	}
-	affect, err := daog.Insert(tc, t, dal.GroupInfoMeta)
-	fmt.Println(affect, t.Id, err)
-
-	t.Name = "rolandx"
-	af, err := daog.Update(tc, t, dal.GroupInfoMeta)
-
-	ef := func() (error, int) {
-		return errors.New("hehhe"), 1
-	}
-
-	err, v := ef()
-	fmt.Println(af, err, v)
+	daog.WrapTrans(tc, func(tc *daog.TransContext) error {
+		affect, err := daog.Insert(tc, t, dal.GroupInfoMeta)
+		fmt.Println(affect, t.Id, err)
+		if err != nil {
+			return err
+		}
+		t.Name = "rolandx"
+		af, err := daog.Update(tc, t, dal.GroupInfoMeta)
+		fmt.Println(af, err)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func createUser() {
@@ -283,7 +280,7 @@ func createUser() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
+		daog.DefferFinalTranSupportRecover(tc, err)
 	}()
 	if err != nil {
 		fmt.Println(err)
@@ -307,7 +304,7 @@ func update() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
+		daog.DefferFinalTranSupportRecover(tc, err)
 	}()
 	g, err := daog.GetById(tc, 5, dal.GroupInfoMeta)
 	if err != nil {
@@ -336,7 +333,7 @@ func queryRawSQLForCount() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.Complete(err)
+		daog.DefferFinalTranSupportRecover(tc, err)
 	}()
 
 	list, err := daog.QueryRawSQL(tc, func(ins *GroupInfoCounter) []any {
