@@ -320,7 +320,7 @@ func update() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 	    // 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		daog.DefferFinalTranSupportRecover(tc, err)
+		tc.CompleteWithPanic(err, recover())
 	}()
 	g, err := daog.GetById(tc, 1, dal.GroupInfoMeta)
 	if err != nil {
@@ -348,7 +348,7 @@ func deleteById() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 	    // 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		daog.DefferFinalTranSupportRecover(tc, err)
+		tc.CompleteWithPanic(err, recover())
 	}()
 	g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
 	if err != nil {
@@ -363,7 +363,8 @@ func deleteById() {
 把所有的事务处理代码都内置到一个函数里，当然这个函数可以是匿名函数，也可以是命名函数，然后调用daog.WrapTrans或者daog.WrapTransWithResult来执行业务处理函数，
 在这种方式下，事务最终的提交或回滚不需要再额外处理。
 #### 自行处理式
-在创建TransContext后，需要手工处理事务的结束，必须通过一个匿名deffer函数来结束事务，匿名函数里调用daog.DefferFinalTranSupportRecover(tc, err)来最终结束事务。
+在创建TransContext后，需要手工处理事务的结束，必须通过一个匿名deffer函数来结束事务，匿名函数里调用 tc.CompleteWithPanic(err, recover()) 来最终结束事务。
+
 需要注意的是：
 * err在当前的函数里必须是全局的
 * 每一个会产生err的函数调用，都必须使用该全局err来接收，比如： err = XXX()

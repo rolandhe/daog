@@ -80,7 +80,7 @@ func NewTransContextWithSharding(datasource Datasource, txRequest txrequest.Requ
 func WrapTrans(tc *TransContext, workFn func(tc *TransContext) error) error {
 	var err error
 	defer func() {
-		DefferFinalTranSupportRecover(tc, err)
+		tc.CompleteWithPanic(err, recover())
 	}()
 	err = workFn(tc)
 	return err
@@ -89,19 +89,10 @@ func WrapTrans(tc *TransContext, workFn func(tc *TransContext) error) error {
 func WrapTransWithResult[T any](tc *TransContext, workFn func(tc *TransContext) (T, error)) (T, error) {
 	var err error
 	defer func() {
-		DefferFinalTranSupportRecover(tc, err)
+		tc.CompleteWithPanic(err, recover())
 	}()
 	ret, err := workFn(tc)
 	return ret, err
-}
-
-func DefferFinalTranSupportRecover(tc *TransContext, err error) {
-	fetal := recover()
-	if fetal != nil {
-		tc.Complete(metRecover)
-		panic(fetal)
-	}
-	tc.Complete(err)
 }
 
 func GetDatasourceShardingKeyFromCtx(ctx context.Context) any {
@@ -229,6 +220,14 @@ func closeConn(tc *TransContext) {
 	if err := tc.conn.Close(); err != nil {
 		LogError(tc.ctx, err)
 	}
+}
+
+func (tc *TransContext) CompleteWithPanic(e error, fetal any) {
+	if fetal != nil {
+		tc.Complete(metRecover)
+		panic(fetal)
+	}
+	tc.Complete(e)
 }
 
 func (tc *TransContext) Complete(e error) {

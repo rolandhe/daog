@@ -180,7 +180,7 @@ func queryAll() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		daog.DefferFinalTranSupportRecover(tc, err)
+		tc.CompleteWithPanic(err, recover())
 	}()
 	gs, err := daog.GetAll(tc, dal.GroupInfoMeta)
 	if err != nil {
@@ -201,7 +201,7 @@ func queryByMatcherOrder() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		daog.DefferFinalTranSupportRecover(tc, err)
+		tc.CompleteWithPanic(err, recover())
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
 	gs, err := daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta, daog.NewDescOrder(dal.GroupInfoFields.Id))
@@ -223,7 +223,7 @@ func countByMatcher() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		daog.DefferFinalTranSupportRecover(tc, err)
+		tc.CompleteWithPanic(err, recover())
 	}()
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
 	c, err := daog.Count(tc, matcher, dal.GroupInfoMeta)
@@ -280,7 +280,7 @@ func createUser() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		daog.DefferFinalTranSupportRecover(tc, err)
+		tc.CompleteWithPanic(err, recover())
 	}()
 	if err != nil {
 		fmt.Println(err)
@@ -304,7 +304,7 @@ func update() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		daog.DefferFinalTranSupportRecover(tc, err)
+		tc.CompleteWithPanic(err, recover())
 	}()
 	g, err := daog.GetById(tc, 5, dal.GroupInfoMeta)
 	if err != nil {
@@ -333,7 +333,7 @@ func queryRawSQLForCount() {
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		daog.DefferFinalTranSupportRecover(tc, err)
+		tc.CompleteWithPanic(err, recover())
 	}()
 
 	list, err := daog.QueryRawSQL(tc, func(ins *GroupInfoCounter) []any {
