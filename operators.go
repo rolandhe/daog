@@ -1,6 +1,7 @@
-// Package daog,A quickly mysql access component.
+// A quickly mysql access component.
 //
 // Copyright 2023 The daog Authors. All rights reserved.
+
 package daog
 
 import (
@@ -19,7 +20,7 @@ func GetTableName[T any](ctx context.Context, meta *TableMeta[T]) string {
 	tableName := meta.Table
 
 	if meta.ShardingFunc != nil {
-		shardingKey := GetTableShardingKeyFromCtx(ctx)
+		shardingKey := getTableShardingKeyFromCtx(ctx)
 		tableName = meta.ShardingFunc(tableName, shardingKey)
 	}
 	return tableName

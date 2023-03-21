@@ -1,4 +1,4 @@
-// Package daog,A quickly mysql access component.
+// A quickly mysql access component.
 //
 // Copyright 2023 The daog Authors. All rights reserved.
 
@@ -24,7 +24,7 @@ func (meta *TableMeta[T]) ExtractFieldValues(ins *T, point bool, exclude map[str
 	return ret
 }
 
-func (meta *TableMeta[T]) ExtractFieldValuesByColumns(ins *T, point bool,columns []string) []any {
+func (meta *TableMeta[T]) ExtractFieldValuesByColumns(ins *T, point bool, columns []string) []any {
 	var ret []any
 
 	for _, column := range columns {

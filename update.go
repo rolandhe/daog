@@ -1,6 +1,7 @@
-// Package daog,A quickly mysql access component.
+// A quickly mysql access component.
 //
 // Copyright 2023 The daog Authors. All rights reserved.
+
 package daog
 
 import (
@@ -8,7 +9,7 @@ import (
 	"time"
 )
 
-func Update[T any](tc *TransContext,ins *T, meta *TableMeta[T]) (int64, error) {
+func Update[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) {
 	idValue := meta.LookupFieldFunc(TableIdColumnName, ins, false)
 	m := NewMatcher()
 	fieldId := TableIdColumnName
@@ -21,11 +22,11 @@ func Update[T any](tc *TransContext,ins *T, meta *TableMeta[T]) (int64, error) {
 	return execSQLCore(tc, sql, args)
 }
 
-func UpdateList[T any](tc *TransContext,insList []*T, meta *TableMeta[T]) (int64, error) {
+func UpdateList[T any](tc *TransContext, insList []*T, meta *TableMeta[T]) (int64, error) {
 	var affectRow int64
 
 	for _, ins := range insList {
-		n, err := Update(tc,ins, meta)
+		n, err := Update(tc, ins, meta)
 		if err != nil {
 			if tc.txRequest == txrequest.RequestNone {
 				return affectRow, err
@@ -37,27 +38,27 @@ func UpdateList[T any](tc *TransContext,insList []*T, meta *TableMeta[T]) (int64
 	return affectRow, nil
 }
 
-func UpdateById[T any](tc *TransContext,modifier Modifier, id int64, meta *TableMeta[T]) (int64, error) {
+func UpdateById[T any](tc *TransContext, modifier Modifier, id int64, meta *TableMeta[T]) (int64, error) {
 	m := NewMatcher()
 	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
 	m.Eq(fieldId, id)
-	return UpdateByModifier(tc,modifier, m, meta)
+	return UpdateByModifier(tc, modifier, m, meta)
 }
 
-func UpdateByIds[T any](tc *TransContext,modifier Modifier, ids []int64, meta *TableMeta[T]) (int64, error) {
+func UpdateByIds[T any](tc *TransContext, modifier Modifier, ids []int64, meta *TableMeta[T]) (int64, error) {
 	m := NewMatcher()
 	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
 	m.Eq(fieldId, ConvertToAnySlice(ids))
-	return UpdateByModifier(tc,modifier, m, meta)
+	return UpdateByModifier(tc, modifier, m, meta)
 }
 
-func UpdateByModifier[T any](tc *TransContext,modifier Modifier, matcher Matcher, meta *TableMeta[T]) (int64, error) {
+func UpdateByModifier[T any](tc *TransContext, modifier Modifier, matcher Matcher, meta *TableMeta[T]) (int64, error) {
 	sql, args := buildModifierExec(meta, tc.ctx, modifier, matcher)
 	if sql == "" {
 		return 0, nil

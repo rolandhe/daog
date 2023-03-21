@@ -1,6 +1,7 @@
-// Package daog,A quickly mysql access component.
+// A quickly mysql access component.
 //
 // Copyright 2023 The daog Authors. All rights reserved.
+
 package daog
 
 import (
@@ -9,7 +10,7 @@ import (
 	"time"
 )
 
-func Insert[T any](tc *TransContext,ins *T, meta *TableMeta[T]) (int64, error) {
+func Insert[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) {
 	tableName := GetTableName(tc.ctx, meta)
 	var insertColumns []string
 	var holder []string

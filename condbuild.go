@@ -1,35 +1,34 @@
-// Package daog,A quickly mysql access component.
-//
+// A quickly mysql access component.
 // Copyright 2023 The daog Authors. All rights reserved.
-//
+
 package daog
 
 // build an equals condition, e.g, name = ?
 func newEqCond(column string, value any) SQLCond {
-	return createSimpleCond("=", column, value)
+	return newSimpleCond("=", column, value)
 }
 
 // build not equals condition, e.g, name != ?
 func newNeCond(column string, value any) SQLCond {
-	return createSimpleCond("!=", column, value)
+	return newSimpleCond("!=", column, value)
 }
 
 // build greater than condition, e.g, total > ?
 func newGtCond(column string, value any) SQLCond {
-	return createSimpleCond(">", column, value)
+	return newSimpleCond(">", column, value)
 }
 
 // build greater than or equals condition, e.g, total >= ?
 func newGteCond(column string, value any) SQLCond {
-	return createSimpleCond(">=", column, value)
+	return newSimpleCond(">=", column, value)
 }
 
 func newLtCond(column string, value any) SQLCond {
-	return createSimpleCond("<", column, value)
+	return newSimpleCond("<", column, value)
 }
 
 func newLteCond(column string, value any) SQLCond {
-	return createSimpleCond("<=", column, value)
+	return newSimpleCond("<=", column, value)
 }
 
 func newInCond(column string, values []any) SQLCond {
@@ -65,8 +64,14 @@ func newBetweenCond(column string, start any, end any) SQLCond {
 	}
 }
 
-func createSimpleCond(op string, column string, value any) SQLCond {
+func newSimpleCond(op string, column string, value any) SQLCond {
 	return &simpleCond{
 		op, column, value,
+	}
+}
+
+func newScalarCond(cond string) SQLCond {
+	return &scalarCond{
+		cond: cond,
 	}
 }

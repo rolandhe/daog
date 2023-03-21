@@ -1,6 +1,7 @@
-// Package daog,A quickly mysql access component.
+// A quickly mysql access component.
 //
 // Copyright 2023 The daog Authors. All rights reserved.
+
 package daog
 
 import (
@@ -13,15 +14,14 @@ type pair struct {
 	value  any
 }
 
-func NewModifier() Modifier  {
+func NewModifier() Modifier {
 	return &internalModifier{}
 }
 
 type Modifier interface {
-	Add(column string, value any)  Modifier
+	Add(column string, value any) Modifier
 	toSQL(tableName string) (string, []any)
 }
-
 
 type internalModifier struct {
 	modifies []*pair

@@ -1,6 +1,5 @@
+// Package utils, daog包使用的工具，现在只包含读取当前goroutine id的工具，未来可能会扩展
 package utils
-
-// get goroutine id, from https://github.com/golang/net/blob/master/http2/gotrack.go
 
 import (
 	"bytes"
@@ -11,6 +10,8 @@ import (
 	"sync"
 )
 
+// 读取当前 goroutine id的工具，代码来自 https://github.com/golang/net/blob/master/http2/gotrack.go
+
 var goroutineSpace = []byte("goroutine ")
 var littleBuf = sync.Pool{
 	New: func() interface{} {
@@ -19,14 +20,14 @@ var littleBuf = sync.Pool{
 	},
 }
 
-// QuickGetGoRoutineId 快速获取goroutine id, 如果出现错误，则返回0
-func QuickGetGoRoutineId() uint64 {
-	id, _ := GetGoRoutineId()
+// QuickGetGoroutineId 快速获取goroutine id, 如果出现错误，则返回0
+func QuickGetGoroutineId() uint64 {
+	id, _ := GetGoroutineId()
 	return id
 }
 
-// GetGoRoutineId 获得当前goroutine id函数
-func GetGoRoutineId() (uint64, error) {
+// GetGoroutineId 获得当前goroutine id函数
+func GetGoroutineId() (uint64, error) {
 	bp := littleBuf.Get().(*[]byte)
 	defer littleBuf.Put(bp)
 	b := *bp

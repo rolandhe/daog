@@ -1,64 +1,98 @@
-// Package daog,A quickly mysql access component.
-//
+// A quickly mysql access component.
 // Copyright 2023 The daog Authors. All rights reserved.
 
 package daog
 
 import (
-	"fmt"
 	"strings"
 )
 
 // define "and","or" operand
 // define like style, %xx%, %s,s%
 const (
-	logicOpAnd     = "and"
-	logicOpOr      = "or"
-	LikeStyleAll   = 0
-	LikeStyleLeft  = 1
+	logicOpAnd = "and"
+	logicOpOr  = "or"
+
+	// LikeStyleAll ,like "%value%"
+	LikeStyleAll = 0
+	// LikeStyleLeft ,like "%value"
+	LikeStyleLeft = 1
+	// LikeStyleRight ,like "value%"
 	LikeStyleRight = 2
 )
 
+// NewMatcher 构建一个以 and 连接的匹配条件构建器
 func NewMatcher() Matcher {
 	return NewAndMatcher()
 }
 
+// NewAndMatcher 构建一个以 and 连接的匹配条件构建器
 func NewAndMatcher() Matcher {
 	return &compositeCond{logicOp: logicOpAnd}
 }
 
+// NewOrMatcher 构建一个以 or 连接的匹配条件构建器
 func NewOrMatcher() Matcher {
 	return &compositeCond{logicOp: logicOpOr}
 }
 
+// SQLCond 抽象描述一个sql的条件，可以是 单个字段的条件，比如 name=?, 也可以是通过连接操作符(and/or)连接的多个条件。
+// 每一个条件以 [字段 操作符 值占位符] 的方式组成，比如 id = ?,生成条件时需要传入每个占位符对应一个参数值
+// 也可以直接给一个标量条件，没有参数，比如 status = 0
 type SQLCond interface {
+	// ToSQL 生成包含?占位符的sql，并返回对应的参数数组
+	// 输入参数 args是已经收集到的参数
 	ToSQL(args []any) (string, []any)
 }
 
+// Matcher sql where条件的构建器，用以构造以 and 或者 or 连接的各种条件, 最后拼接生成一个可用的、包含?占位符的where条件,并且收集所有对应?的参数数组
 type Matcher interface {
 	SQLCond
+
 	// Add 这个方法是个冗余方法，其实可以直接使用AddCond, 因为Matcher继承自SQLCond，冗余这个方法仅仅是让使用者更好的理解
 	Add(matcher Matcher) Matcher
+
+	// AddCond 加入一个新的到条件
 	AddCond(cond SQLCond) Matcher
-	// Eq equals 语义
+
+	// Eq 快速生成一个等于语义的条件，比如 id = 100
+	// column 是数据库表的字段名，value是条件值
 	Eq(column string, value any) Matcher
-	// Ne  not equals 语义
+
+	// Ne 快速生成一个 not equals 条件语义， Eq 的反向
 	Ne(column string, value any) Matcher
-	// Lt less than语义
+
+	// Lt 快速生成一个 less than 条件语义
 	Lt(column string, value any) Matcher
-	// Lte less than or equals
+
+	// Lte 快速生成一个 less than or equals 条件语义
 	Lte(column string, value any) Matcher
-	// Gt greater than
+
+	// Gt 快速生成一个greater than 条件语义
 	Gt(column string, value any) Matcher
-	// Gte greater than or equals
+
+	// Gte 快速生成一个 greater than or equals 条件语义
 	Gte(column string, value any) Matcher
-	// In xx in(?,?,...)
+
+	// In 快速生成in 条件语义，比如 xx in(?,?,...)
 	In(column string, values []any) Matcher
-	// NotIn xx not in(?,?,...)
+
+	// NotIn 快速生成 not in 语义，比如 xx not in(?,?,...)
 	NotIn(column string, values []any) Matcher
+
+	// Like 快速生成 like 条件语义， 参数 likeStyle对应 枚举值： LikeStyleAll/ LikeStyleLeft / LikeStyleRight
 	Like(column string, value string, likeStyle int) Matcher
+
+	// Null 快速生成是否为空的条件语义，比如 name is null,  参数not表示是否为not null， 如果为true， 则生成条件 name is not null
 	Null(column string, not bool) Matcher
+
+	// Between 快速生成between 语义, start 和end可以有一个为 nil， 如果 start = nil，则退化成 column <= end, 如果 end = nil，则退化成 column >= end
+	// 两个都不为nil，生成标准的between语义
 	Between(column string, start any, end any) Matcher
+
+	// AddScalar 增加一个标量条件，即增加一个条件字符串，比如 "id = 100", 或者 "name = 'Joe'",
+	// 注意 尽量不要使用这个方法，因为它容易引起sql注入，如果你需要使用这个方法，你一定要使用转义来防止sql注入
+	AddScalar(cond string) Matcher
 }
 
 type compositeCond struct {
@@ -126,6 +160,11 @@ func (cc *compositeCond) Between(column string, start any, end any) Matcher {
 	return cc
 }
 
+func (cc *compositeCond) AddScalar(cond string) Matcher {
+	cc.conds = append(cc.conds, newScalarCond(cond))
+	return cc
+}
+
 func (cc *compositeCond) ToSQL(args []any) (string, []any) {
 	var condSegs []string
 
@@ -146,7 +185,7 @@ func (cc *compositeCond) ToSQL(args []any) (string, []any) {
 	if l == 0 {
 		return "", args
 	}
-	sql := strings.Join(condSegs, fmt.Sprintf(" %s ", cc.logicOp))
+	sql := strings.Join(condSegs, " "+cc.logicOp+" ")
 	if cc.logicOp == logicOpOr && l > 1 {
 		sql = "(" + sql + ")"
 	}
@@ -160,7 +199,7 @@ type simpleCond struct {
 }
 
 func (sc *simpleCond) ToSQL(args []any) (string, []any) {
-	return fmt.Sprintf("%s %s ?", sc.column, sc.op), append(args, sc.value)
+	return sc.column + " " + sc.op + " ?", append(args, sc.value)
 }
 
 type inCond struct {
@@ -178,11 +217,16 @@ func (ic *inCond) ToSQL(args []any) (string, []any) {
 		holders[i] = "?"
 	}
 
-	sfmt := "%s in (%s)"
+	var builder strings.Builder
+	builder.WriteString(ic.column)
 	if ic.not {
-		sfmt = "%s not in (%s)"
+		builder.WriteString(" not in (")
+	} else {
+		builder.WriteString(" in (")
 	}
-	return fmt.Sprintf(sfmt, ic.column, strings.Join(holders, ",")), append(args, ic.values...)
+	builder.WriteString(strings.Join(holders, ","))
+	builder.WriteString(")")
+	return builder.String(), append(args, ic.values...)
 }
 
 type betweenCond struct {
@@ -197,14 +241,13 @@ func (btc *betweenCond) ToSQL(args []any) (string, []any) {
 	}
 
 	if btc.start != nil && btc.end == nil {
-		return fmt.Sprintf("%s >= ?", btc.column), append(args, btc.start)
+		return btc.column + " >= ?", append(args, btc.start)
 	}
 
 	if btc.start == nil && btc.end != nil {
-		return fmt.Sprintf("%s <= ?", btc.column), append(args, btc.end)
+		return btc.column + " <= ?", append(args, btc.end)
 	}
-
-	return fmt.Sprintf("%s between ? and ?", btc.column), append(args, btc.start, btc.end)
+	return btc.column + " between ? and ?", append(args, btc.start, btc.end)
 }
 
 type nullCond struct {
@@ -214,9 +257,10 @@ type nullCond struct {
 
 func (nc *nullCond) ToSQL(args []any) (string, []any) {
 	if nc.not {
-		return fmt.Sprintf("%s is not null", nc.column), args
+		return nc.column + " is not null", args
 	}
-	return fmt.Sprintf("%s is null", nc.column), args
+
+	return nc.column + " is null", args
 }
 
 type likeCond struct {
@@ -231,9 +275,9 @@ func (likec *likeCond) ToSQL(args []any) (string, []any) {
 	}
 	v := likec.value
 	switch likec.likeStyle {
-	case LikeStyleRight:
-		v = "%" + v
 	case LikeStyleLeft:
+		v = "%" + v
+	case LikeStyleRight:
 		v = v + "%"
 	case LikeStyleAll:
 		v = "%" + v + "%"
@@ -241,5 +285,13 @@ func (likec *likeCond) ToSQL(args []any) (string, []any) {
 		return "", args
 	}
 
-	return fmt.Sprintf("%s like ?", likec.column), append(args, v)
+	return likec.column + " like ?", append(args, v)
+}
+
+type scalarCond struct {
+	cond string
+}
+
+func (scalar *scalarCond) ToSQL(args []any) (string, []any) {
+	return scalar.cond, args
 }
