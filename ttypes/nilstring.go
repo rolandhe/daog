@@ -6,7 +6,6 @@ package ttypes
 import (
 	"bytes"
 	"database/sql"
-	"strings"
 )
 
 var nullJsonValue = []byte("null")
@@ -36,8 +35,8 @@ func (s *NilableString) StringNilAsDefault(def string) string {
 	return def
 }
 
-// UnmarshalJSON 实现 json.Unmarshaler
-func (s *NilableString) UnmarshalJSON(b []byte) error {
+// UnmarshalText 实现 encoding.TextUnmarshaler 接口
+func (s *NilableString) UnmarshalText(b []byte) error{
 	if len(b) == 0 {
 		s.Valid = false
 		return nil
@@ -47,15 +46,17 @@ func (s *NilableString) UnmarshalJSON(b []byte) error {
 		s.String = ""
 		return nil
 	}
-	s.String = strings.Trim(string(b), `"`) //get rid of "
+	//s.String = strings.Trim(string(b), `"`) //get rid of "
+	s.String = string(b)
 	s.Valid = true
 	return nil
 }
 
-// MarshalJSON 实现 json.Marshaler 接口
-func (s NilableString) MarshalJSON() ([]byte, error) {
+// MarshalText 实现 encoding.TextMarshaler 接口
+func (s NilableString) MarshalText() ([]byte, error) {
 	if !s.Valid {
 		return []byte("null"), nil
 	}
-	return []byte(`"` + s.String + `"`), nil
+
+	return []byte(s.String), nil
 }

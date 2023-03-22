@@ -8,22 +8,35 @@ import (
 )
 
 type Data struct {
-	//Id int64
-	//Name string
+	Id int64
+	Name string
 	CreateAt ttypes.NormalDatetime
 	Modify ttypes.NilableDatetime
+	S ttypes.NilableString
+	Str string
 }
 
 func main()  {
 	d := &Data{
-		//2,
-		//"roland",
-		ttypes.NormalDatetime(time.Now()),
-		*ttypes.FromDatetime(time.Now()),
+		Id:2,
+		Name:"roland",
+		CreateAt: ttypes.NormalDatetime(time.Now()),
+		Modify: *ttypes.FromDatetime(time.Now()),
+		S :  *ttypes.FromString(`ab
+c`),
+		Str: `g
+r`,
 	}
-	j,_ := json.Marshal(d)
+	j,err := json.Marshal(d)
+	if err != nil{
+		fmt.Println(err)
+		return
+	}
 
+	fmt.Println(string(j))
 	var t Data
 	json.Unmarshal(j,&t)
-	fmt.Println(t)
+
+	s := t.S.String
+	fmt.Println(s)
 }
