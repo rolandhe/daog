@@ -189,17 +189,17 @@ func traceLogSQLBefore(ctx context.Context, sql string, args []any) string {
 	md5data := []byte(sql)
 	argJson, err := json.Marshal(args)
 	if err != nil {
-		LogError(ctx, err)
+		GLogger.Error(ctx, err)
 	} else {
 		md5data = append(md5data, argJson...)
 	}
 	sumData := md5.Sum(md5data)
 	sqlMd5 := strings.ToUpper(hex.EncodeToString(sumData[:]))
 	//sqlMd5 := fmt.Sprintf("%X", md5.Sum(md5data))
-	LogExecSQLBefore(ctx, sql, argJson, sqlMd5)
+	GLogger.ExecSQLBefore(ctx, sql, argJson, sqlMd5)
 	return sqlMd5
 }
 
 func traceLogSQLAfter(ctx context.Context, sqlMd5 string, startTime int64) {
-	LogExecSQLAfter(ctx, sqlMd5, time.Now().UnixMilli()-startTime)
+	GLogger.ExecSQLAfter(ctx, sqlMd5, time.Now().UnixMilli()-startTime)
 }

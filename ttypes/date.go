@@ -49,7 +49,7 @@ func (ndt *NormalDate) UnmarshalJSON(b []byte) error {
 	value := strings.Trim(string(b), `"`)   //get rid of "
 	t, err := time.Parse(DateFormat, value) //parse time
 	if err != nil {
-		daog.SimpleLogError(err)
+		daog.GLogger.SimpleLogError(err)
 		return err
 	}
 	*ndt = NormalDate(t) //set result using the pointer

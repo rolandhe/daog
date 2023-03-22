@@ -37,13 +37,13 @@ func DeleteByIds[T any](tc *TransContext, ids []int64, meta *TableMeta[T]) (int6
 func DeleteByMatcher[T any](tc *TransContext, matcher Matcher, meta *TableMeta[T]) (int64, error) {
 	base := "delete from " + GetTableName(tc.ctx, meta)
 	if matcher == nil {
-		LogInfo(tc.ctx, "delete must has condition")
+		GLogger.Info(tc.ctx, "delete must has condition")
 		return 0, nil
 	}
 	var args []any
 	condi, args := matcher.ToSQL(args)
 	if condi == "" {
-		LogInfo(tc.ctx, "delete must has condition")
+		GLogger.Info(tc.ctx, "delete must has condition")
 		return 0, nil
 	}
 

@@ -200,7 +200,7 @@ func (tc *TransContext) CompleteWithPanic(e error, fetal any) {
 
 // Complete 事务最终完成，可能是提交，也可能是会管，生命周期结束. e == nil, 提交事务，否则回滚
 func (tc *TransContext) Complete(e error) {
-	LogError(tc.ctx, e)
+	GLogger.Error(tc.ctx, e)
 	if tc.status == tcStatusInvalid {
 		return
 	}
@@ -266,7 +266,7 @@ func (tc *TransContext) rollbackAndReleaseConn() error {
 
 func closeConn(tc *TransContext) {
 	if err := tc.conn.Close(); err != nil {
-		LogError(tc.ctx, err)
+		GLogger.Error(tc.ctx, err)
 	}
 }
 

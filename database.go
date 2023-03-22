@@ -140,7 +140,7 @@ func (db *shardingDatasource) getDB(ctx context.Context) *sql.DB {
 	key := getDatasourceShardingKeyFromCtx(ctx)
 	index, err := db.policy.Shard(key, len(db.singleDatasource))
 	if err != nil {
-		LogError(ctx, err)
+		GLogger.Error(ctx, err)
 		return nil
 	}
 	return db.singleDatasource[index].getDB(ctx)
