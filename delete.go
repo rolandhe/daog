@@ -22,7 +22,7 @@ func DeleteById[T any](tc *TransContext, id int64, meta *TableMeta[T]) (int64, e
 //
 // 参数: ids 一批主键 , meta 表的元数据，由compile编译生成，比如  GroupInfo.GroupInfoMeta
 //
-// 返回值: 删除记录数，是否出错
+// 返回值: 删除记录数及是否出错
 func DeleteByIds[T any](tc *TransContext, ids []int64, meta *TableMeta[T]) (int64, error) {
 	m := NewMatcher()
 	fieldId := TableIdColumnName
@@ -33,6 +33,7 @@ func DeleteByIds[T any](tc *TransContext, ids []int64, meta *TableMeta[T]) (int6
 	return DeleteByMatcher(tc, m, meta)
 }
 
+// DeleteByMatcher 通过匹配条件删除数据，返回删除记录数及是否出错
 func DeleteByMatcher[T any](tc *TransContext, matcher Matcher, meta *TableMeta[T]) (int64, error) {
 	base := "delete from " + GetTableName(tc.ctx, meta)
 	if matcher == nil {

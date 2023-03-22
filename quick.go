@@ -4,31 +4,56 @@
 
 package daog
 
+// QuickDao 类似于java的Dao接口，用于仅仅访问一张表。
+// 针对每一张表生成一个实现 QuickDao 的struct的实例，使用这个实例来操作这张表。相对于直接调用诸如 GetAll 、 GetById 等函数可以少传入 TableMeta 对象，并且让代码看起来更面向对象。
+// 针对每一张表的 QuickDao 不用自行实现， compile 会自动生成，比如 GroupInfo.go文件中GroupInfoDao
 type QuickDao[T any] interface {
+	// GetAll 封装 GetAll 函数
 	GetAll(tc *TransContext, viewColumns ...string) ([]*T, error)
+	// GetById 封装 GetById 函数
 	GetById(tc *TransContext, id int64, viewColumns ...string) (*T, error)
+	// GetByIds 封装 GetByIds 函数
 	GetByIds(tc *TransContext, ids []int64, viewColumns ...string) ([]*T, error)
+	// QueryListMatcher 封装 QueryListMatcher 函数
 	QueryListMatcher(tc *TransContext, m Matcher, orders ...*Order) ([]*T, error)
+	// QueryPageListMatcher 封装 QueryPageListMatcher 函数
 	QueryPageListMatcher(tc *TransContext, m Matcher, pager *Pager, orders ...*Order) ([]*T, error)
+	// QueryPageListMatcherWithViewColumns 封装 QueryPageListMatcherWithViewColumns 函数
 	QueryPageListMatcherWithViewColumns(tc *TransContext, m Matcher, viewColumns []string, pager *Pager, orders ...*Order) ([]*T, error)
+	// QueryListMatcherByBatchHandle 封装 QueryListMatcherByBatchHandle 函数
 	QueryListMatcherByBatchHandle(tc *TransContext, m Matcher, totalLimit int, batchSize int, handler BatchHandler[T], orders ...*Order) error
+	// QueryListMatcherWithViewColumnsByBatchHandle 封装 QueryListMatcherWithViewColumnsByBatchHandle 函数
 	QueryListMatcherWithViewColumnsByBatchHandle(tc *TransContext, m Matcher, viewColumns []string, totalLimit int, batchSize int, handler BatchHandler[T], orders ...*Order) error
+	// QueryOneMatcher 封装 QueryOneMatcher 函数
 	QueryOneMatcher(tc *TransContext, m Matcher, viewColumns ...string) (*T, error)
+	// QueryRawSQL 封装 QueryRawSQL 函数
 	QueryRawSQL(tc *TransContext, extract ExtractScanFieldPoints[T], sql string, args ...any) ([]*T, error)
+	// QueryRawSQLByBatchHandle 封装 QueryRawSQLByBatchHandle 函数
 	QueryRawSQLByBatchHandle(tc *TransContext, batchSize int, handler BatchHandler[T], extract ExtractScanFieldPoints[T], sql string, args ...any) error
+	// Count 封装 Count 函数
 	Count(tc *TransContext, m Matcher) (int64, error)
 
+	// Insert 封装 Insert 函数
 	Insert(tc *TransContext, ins *T) (int64, error)
 
+	// Update 封装 Update 函数
 	Update(tc *TransContext, ins *T) (int64, error)
+	// UpdateList 封装 UpdateList 函数
 	UpdateList(tc *TransContext, insList []*T) (int64, error)
+	// UpdateById 封装 UpdateById 函数
 	UpdateById(tc *TransContext, modifier Modifier, id int64) (int64, error)
+	// UpdateByIds 封装 UpdateByIds 函数
 	UpdateByIds(tc *TransContext, modifier Modifier, ids []int64) (int64, error)
+	// UpdateByModifier 封装 UpdateByModifier 函数
 	UpdateByModifier(tc *TransContext, modifier Modifier, matcher Matcher) (int64, error)
+	// ExecRawSQL 封装 ExecRawSQL 函数
 	ExecRawSQL(tc *TransContext, sql string, args ...any) (int64, error)
 
+	// DeleteById 封装 DeleteById 函数
 	DeleteById(tc *TransContext, id int64) (int64, error)
+	// DeleteByIds 封装 DeleteByIds 函数
 	DeleteByIds(tc *TransContext, ids []int64) (int64, error)
+	// DeleteByMatcher 封装 GetById 函数
 	DeleteByMatcher(tc *TransContext, matcher Matcher) (int64, error)
 }
 

@@ -5,11 +5,15 @@
 package daog
 
 import (
-	"fmt"
 	"strings"
 	"time"
 )
 
+// Insert 插入一条数据到表中，如果表有自增id，那么生成的id赋值到ins对象中
+//
+// 参数: ins 表实体对象，对应表的struct由 compile生成，比如 GroupInfo, meta 表的元数据，由compile编译生成，比如  GroupInfo.GroupInfoMeta
+//
+// 返回值: 插入的记录数，是否出错
 func Insert[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) {
 	tableName := GetTableName(tc.ctx, meta)
 	var insertColumns []string
@@ -33,7 +37,15 @@ func Insert[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) 
 		}
 	}
 
-	sql := fmt.Sprintf("insert into %s(%s) values(%s)", tableName, strings.Join(insertColumns, ","), strings.Join(holder, ","))
+	var builder strings.Builder
+	builder.WriteString("insert into ")
+	builder.WriteString(tableName)
+	builder.WriteString("(")
+	builder.WriteString(strings.Join(insertColumns, ","))
+	builder.WriteString(") values(")
+	builder.WriteString(strings.Join(holder, ","))
+	builder.WriteString(")")
+	sql := builder.String()
 	args := meta.ExtractFieldValues(ins, false, exclude)
 	affect, lastId, err := execInsert(tc, sql, args, meta.AutoColumn != "")
 	if err != nil {

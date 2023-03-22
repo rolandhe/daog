@@ -7,8 +7,8 @@ package daog
 import (
 	"context"
 	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +16,21 @@ import (
 
 const TableIdColumnName = "id"
 
+// ConvertToAnySlice 把泛型的slice转换成 any类型的slice，在应用系统的上层往往是泛型slice，通过强类型校验来防止出错，
+// 但在sql driver底层需要 []any进行参数传递，二者不能被编译器自动转换，所以需要该函数来转换
+func ConvertToAnySlice[T any](data []T) []any {
+	l := len(data)
+	if l == 0 {
+		return nil
+	}
+	target := make([]any, l)
+	for i, v := range data {
+		target[i] = v
+	}
+	return target
+}
+
+// GetTableName  根据meta及上下文中的信息来确定表名称，这应用于分表的场景，记住这需要支持表shard的事务上下文
 func GetTableName[T any](ctx context.Context, meta *TableMeta[T]) string {
 	tableName := meta.Table
 
@@ -54,9 +69,9 @@ func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher
 func countQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher) (string, []any) {
 	var base string
 	if meta.AutoColumn == "" {
-		base = "SELECT COUNT(*) FROM " + GetTableName(ctx, meta)
+		base = "select count(*) from " + GetTableName(ctx, meta)
 	} else {
-		base = "SELECT COUNT(" + meta.AutoColumn + ") FROM " + GetTableName(ctx, meta)
+		base = "select count(" + meta.AutoColumn + ") from " + GetTableName(ctx, meta)
 	}
 
 	if matcher == nil {
@@ -106,8 +121,6 @@ func buildQuerySuffix(pager *Pager, orders []*Order) string {
 	return ordStat + limitStat
 }
 func buildUpdateBase[T any](meta *TableMeta[T], ctx context.Context) string {
-	sfmt := "update %s set %s"
-
 	var upConds []string
 	for _, v := range meta.Columns {
 		if v == meta.AutoColumn {
@@ -117,7 +130,7 @@ func buildUpdateBase[T any](meta *TableMeta[T], ctx context.Context) string {
 	}
 	upCondStmt := strings.Join(upConds, ",")
 
-	return fmt.Sprintf(sfmt, GetTableName(ctx, meta), upCondStmt)
+	return "update " + GetTableName(ctx, meta) + " set " + upCondStmt
 }
 
 func updateExec[T any](meta *TableMeta[T], ins *T, ctx context.Context, matcher Matcher) (string, []any) {
@@ -169,17 +182,7 @@ func buildInsInfoOfRow[T any](meta *TableMeta[T], viewColumns []string) (*T, []a
 	return ins, meta.ExtractFieldValuesByColumns(ins, true, viewColumns)
 }
 
-func ConvertToAnySlice[T any](data []T) []any {
-	l := len(data)
-	if l == 0 {
-		return nil
-	}
-	target := make([]any, l)
-	for i, v := range data {
-		target[i] = v
-	}
-	return target
-}
+
 
 func traceLogSQLBefore(ctx context.Context, sql string, args []any) string {
 	var argJson []byte
@@ -190,7 +193,9 @@ func traceLogSQLBefore(ctx context.Context, sql string, args []any) string {
 	} else {
 		md5data = append(md5data, argJson...)
 	}
-	sqlMd5 := fmt.Sprintf("%X", md5.Sum(md5data))
+	sumData := md5.Sum(md5data)
+	sqlMd5 := strings.ToUpper(hex.EncodeToString(sumData[:]))
+	//sqlMd5 := fmt.Sprintf("%X", md5.Sum(md5data))
 	LogExecSQLBefore(ctx, sql, argJson, sqlMd5)
 	return sqlMd5
 }

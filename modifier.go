@@ -5,7 +5,6 @@
 package daog
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -14,11 +13,15 @@ type pair struct {
 	value  any
 }
 
+// NewModifier 创建 Modifier 对象
 func NewModifier() Modifier {
 	return &internalModifier{}
 }
 
+// Modifier 描述 update 语义中set cause的生成，通过 Modifier 来避免自己拼接sql片段，降低出错概率，
+// 最终生成 update tab set xx=?,bb=? 的 sql 片段
 type Modifier interface {
+	// Add 增加一个字段的修改，比如 id = 100
 	Add(column string, value any) Modifier
 	toSQL(tableName string) (string, []any)
 }
@@ -43,5 +46,5 @@ func (m *internalModifier) toSQL(tableName string) (string, []any) {
 		modStmt[i] = p.column + "=?"
 		args[i] = p.value
 	}
-	return fmt.Sprintf("update %s set %s", tableName, strings.Join(modStmt, ",")), args
+	return "update " + tableName + " set " + strings.Join(modStmt, ","), args
 }
