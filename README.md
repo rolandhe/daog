@@ -406,14 +406,10 @@ daog缺省支持分库，分库策略需要您实现DatasourceShardingPolicy接�
 通过DbConf.LogSQL可以设置该数据源是否需要输出执行的sql及参数，可以为数据源指定，每个一个TransContext执行时会继承这个配置，您也可以设置
 TransContext.LogSQL属性为每个事务上下文设置，更细粒度的控制日志输出。
 
-日志的输出实现，缺省是调用标准库的log包，您也可以通过配置daog包的3个全局函数来修改：
-* LogError
-* LogInfo
-* LogExecSQLBefore
-* LogExecSQLAfter
+日志通过调用 daog.GLogger,它的数据类型是 SQLLogger 接口， 输出实现，缺省是调用标准库的log包，您也可以自行实现SQLLogger接口，并构建对象赋值给 GLogger 全局变量：
 
 GetTraceIdFromContext函数可以从context.Context中读取traceId
-
+GetGoroutineIdFromContext 函数可以从 context.Context中读取创建TransContext的goroutine id
 ## 日期
 
 golang的time.Time支持纳秒级别，但数据库支持秒级别即可，因此提供ttypes.NormalDate和ttypes.NormalDatetime来支持。
