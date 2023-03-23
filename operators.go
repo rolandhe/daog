@@ -7,8 +7,8 @@ package daog
 import (
 	"context"
 	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
+	"github.com/rolandhe/daog/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -194,8 +194,7 @@ func traceLogSQLBefore(ctx context.Context, sql string, args []any) string {
 		md5data = append(md5data, argJson...)
 	}
 	sumData := md5.Sum(md5data)
-	sqlMd5 := strings.ToUpper(hex.EncodeToString(sumData[:]))
-	//sqlMd5 := fmt.Sprintf("%X", md5.Sum(md5data))
+	sqlMd5 := utils.ToUpperHexString(sumData[:])
 	GLogger.ExecSQLBefore(ctx, sql, argJson, sqlMd5)
 	return sqlMd5
 }
