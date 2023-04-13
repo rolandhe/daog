@@ -59,3 +59,10 @@ func (s NilableDatetime) MarshalJSON() ([]byte, error) {
 	}
 	return []byte(`"` + s.Time.Format(DatetimeFormat) + `"`), nil
 }
+
+func (s *NilableDatetime) ToTimePointer() *time.Time {
+	if !s.Valid {
+		return nil
+	}
+	return &s.Time
+}

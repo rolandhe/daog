@@ -49,3 +49,7 @@ func (ndt *NormalDatetime) UnmarshalJSON(b []byte) error {
 func (ndt NormalDatetime) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + time.Time(ndt).Format(DatetimeFormat) + `"`), nil
 }
+
+func (ndt *NormalDatetime) ToTimePointer() *time.Time {
+	return (*time.Time)(ndt)
+}
