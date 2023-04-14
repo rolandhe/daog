@@ -241,7 +241,7 @@ type betweenCond struct {
 
 func (btc *betweenCond) ToSQL(args []any) (string, []any, error) {
 	if btc.start == nil && btc.end == nil {
-		return "", args, nil
+		return "", args, errors.New(btc.column + " between condition is empty")
 	}
 
 	if btc.start != nil && btc.end == nil {
@@ -275,7 +275,7 @@ type likeCond struct {
 
 func (likec *likeCond) ToSQL(args []any) (string, []any, error) {
 	if likec.value == "" {
-		return "", args, nil
+		return "", args, errors.New(likec.column + " like param is empty")
 	}
 	v := likec.value
 	switch likec.likeStyle {
@@ -297,5 +297,8 @@ type scalarCond struct {
 }
 
 func (scalar *scalarCond) ToSQL(args []any) (string, []any, error) {
+	if scalar.cond == "" {
+		return "", nil, errors.New("empty scalarCond")
+	}
 	return scalar.cond, args, nil
 }
