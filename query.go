@@ -14,11 +14,11 @@ var invalidBatchSizeError = errors.New("page size must be greater than 0")
 // GetAll 查询表的所有数据
 // 可变参数 viewColumns：
 //
-//    可以指定需要查询的表字段，可以指定多个或者不指定，如果不指定表示要查询所有的表字段
+//	可以指定需要查询的表字段，可以指定多个或者不指定，如果不指定表示要查询所有的表字段
 //
-//    需要注意的是，表字段指的是数据库表的列名，不是描述表的struct里的属性名
+//	需要注意的是，表字段指的是数据库表的列名，不是描述表的struct里的属性名
 //
-//    compile生成的文件中会有表字段的常量，比如 GroupInfo.go 文件中的 GroupInfoFields.Id, 直接使用它，避免手动写字符串
+//	compile生成的文件中会有表字段的常量，比如 GroupInfo.go 文件中的 GroupInfoFields.Id, 直接使用它，避免手动写字符串
 func GetAll[T any](tc *TransContext, meta *TableMeta[T], viewColumns ...string) ([]*T, error) {
 	return QueryPageListMatcherWithViewColumns(tc, nil, meta, viewColumns, nil)
 }
@@ -26,11 +26,11 @@ func GetAll[T any](tc *TransContext, meta *TableMeta[T], viewColumns ...string) 
 // GetById 根据指定的主键返回单条数据
 // 可变参数 viewColumns：
 //
-//    可以指定需要查询的表字段，可以指定多个或者不指定，如果不指定表示要查询所有的表字段
+//	可以指定需要查询的表字段，可以指定多个或者不指定，如果不指定表示要查询所有的表字段
 //
-//    需要注意的是，表字段指的是数据库表的列名，不是描述表的struct里的属性名
+//	需要注意的是，表字段指的是数据库表的列名，不是描述表的struct里的属性名
 //
-//    compile生成的文件中会有表字段的常量，比如 GroupInfo.go 文件中的 GroupInfoFields.Id, 直接使用它，避免手动写字符串
+//	compile生成的文件中会有表字段的常量，比如 GroupInfo.go 文件中的 GroupInfoFields.Id, 直接使用它，避免手动写字符串
 func GetById[T any](tc *TransContext, id int64, meta *TableMeta[T], viewColumns ...string) (*T, error) {
 	m := NewMatcher()
 	fieldId := TableIdColumnName
@@ -44,12 +44,15 @@ func GetById[T any](tc *TransContext, id int64, meta *TableMeta[T], viewColumns 
 // GetByIds 根据主键数组返回多条数据
 // 可变参数 viewColumns：
 //
-//    可以指定需要查询的表字段，可以指定多个或者不指定，如果不指定表示要查询所有的表字段
+//	可以指定需要查询的表字段，可以指定多个或者不指定，如果不指定表示要查询所有的表字段
 //
-//    需要注意的是，表字段指的是数据库表的列名，不是描述表的struct里的属性名
+//	需要注意的是，表字段指的是数据库表的列名，不是描述表的struct里的属性名
 //
-//    compile生成的文件中会有表字段的常量，比如 GroupInfo.go 文件中的 GroupInfoFields.Id, 直接使用它，避免手动写字符串
+//	compile生成的文件中会有表字段的常量，比如 GroupInfo.go 文件中的 GroupInfoFields.Id, 直接使用它，避免手动写字符串
 func GetByIds[T any](tc *TransContext, ids []int64, meta *TableMeta[T], viewColumns ...string) ([]*T, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
 	m := NewMatcher()
 	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
@@ -61,19 +64,20 @@ func GetByIds[T any](tc *TransContext, ids []int64, meta *TableMeta[T], viewColu
 
 // QueryListMatcher 根据查询条件 Matcher 返回多条数据， 通过与 Matcher 有关的相关函数来构建查询条件
 // orders 可变参数：
-//     可以传入一个、多个或者零个排序条件
 //
-//     每个条件可以指定排序表字段名及是否是升序要求
+//	可以传入一个、多个或者零个排序条件
+//
+//	每个条件可以指定排序表字段名及是否是升序要求
 func QueryListMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T], orders ...*Order) ([]*T, error) {
 	return QueryPageListMatcher(tc, m, meta, nil, orders...)
 }
 
-
 // QueryPageListMatcher 根据查询条件 Matcher 及 Pager 返回一页数据， 通过与 Matcher 有关的相关函数来构建查询条件， 根据 Pager 相关函数来构建分页条件
 // orders 可变参数：
-//     可以传入一个、多个或者零个排序条件
 //
-//     每个条件可以指定排序表字段名及是否是升序要求
+//	可以传入一个、多个或者零个排序条件
+//
+//	每个条件可以指定排序表字段名及是否是升序要求
 //
 // pager 参数，可以为nil，如果为nil，不分页
 func QueryPageListMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T], pager *Pager, orders ...*Order) ([]*T, error) {
@@ -82,15 +86,19 @@ func QueryPageListMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T]
 
 // QueryPageListMatcherWithViewColumns 根据查询条件 Matcher 及 Pager 返回一页数据， 通过与 Matcher 有关的相关函数来构建查询条件， 根据 Pager 相关函数来构建分页条件， viewColumns 指定需要查询的表字段名，表示一个视图
 // orders 可变参数：
-//     可以传入一个、多个或者零个排序条件
 //
-//     每个条件可以指定排序表字段名及是否是升序要求
+//	可以传入一个、多个或者零个排序条件
+//
+//	每个条件可以指定排序表字段名及是否是升序要求
 //
 // pager 参数，可以为nil，如果为nil，不分页
 //
 // viewColumns 指定需要查询的表字段名，表示一个视图, 可以传入 nil， 表示读取所有字段
 func QueryPageListMatcherWithViewColumns[T any](tc *TransContext, m Matcher, meta *TableMeta[T], viewColumns []string, pager *Pager, orders ...*Order) ([]*T, error) {
-	sql, args := selectQuery(meta, tc.ctx, m, pager, orders, viewColumns)
+	sql, args, err := selectQuery(meta, tc.ctx, m, pager, orders, viewColumns)
+	if err != nil {
+		return nil, err
+	}
 	return queryRawSQLCore(tc, func() (*T, []any) {
 		return buildInsInfoOfRow(meta, viewColumns)
 	}, sql, args...)
@@ -119,7 +127,10 @@ func QueryListMatcherWithViewColumnsByBatchHandle[T any](tc *TransContext, m Mat
 	if totalLimit > 0 {
 		pager = &Pager{0, totalLimit}
 	}
-	sql, args := selectQuery(meta, tc.ctx, m, pager, orders, viewColumns)
+	sql, args, err := selectQuery(meta, tc.ctx, m, pager, orders, viewColumns)
+	if err != nil {
+		return err
+	}
 
 	return queryRawSQLByBatchHandleCore(tc, batchSize, handler, func() (*T, []any) {
 		return buildInsInfoOfRow(meta, viewColumns)
@@ -134,8 +145,10 @@ func QueryOneMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T], vie
 	if err != nil {
 		return nil, err
 	}
-	sql, args := selectQuery(meta, tc.ctx, m, nil, nil, viewColumns)
-
+	sql, args, err := selectQuery(meta, tc.ctx, m, nil, nil, viewColumns)
+	if err != nil {
+		return nil, err
+	}
 	if tc.LogSQL {
 		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)
 		defer traceLogSQLAfter(tc.ctx, sqlMd5, time.Now().UnixMilli())
@@ -185,7 +198,10 @@ func Count[T any](tc *TransContext, m Matcher, meta *TableMeta[T]) (int64, error
 	if err != nil {
 		return 0, err
 	}
-	sql, args := countQuery(meta, tc.ctx, m)
+	sql, args, err := countQuery(meta, tc.ctx, m)
+	if err != nil {
+		return 0, err
+	}
 
 	if tc.LogSQL {
 		sqlMd5 := traceLogSQLBefore(tc.ctx, sql, args)

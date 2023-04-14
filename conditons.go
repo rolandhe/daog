@@ -4,6 +4,7 @@
 package daog
 
 import (
+	"errors"
 	"strings"
 )
 
@@ -42,7 +43,7 @@ func NewOrMatcher() Matcher {
 type SQLCond interface {
 	// ToSQL 生成包含?占位符的sql，并返回对应的参数数组
 	// 输入参数 args是已经收集到的参数
-	ToSQL(args []any) (string, []any)
+	ToSQL(args []any) (string, []any, error)
 }
 
 // Matcher sql where条件的构建器，用以构造以 and 或者 or 连接的各种条件, 最后拼接生成一个可用的、包含?占位符的where条件,并且收集所有对应?的参数数组
@@ -165,15 +166,18 @@ func (cc *compositeCond) AddScalar(cond string) Matcher {
 	return cc
 }
 
-func (cc *compositeCond) ToSQL(args []any) (string, []any) {
+func (cc *compositeCond) ToSQL(args []any) (string, []any, error) {
 	var condSegs []string
 
 	if len(cc.conds) == 0 {
-		return "", args
+		return "", args, nil
 	}
 
 	for _, cond := range cc.conds {
-		s, a := cond.ToSQL(args)
+		s, a, err := cond.ToSQL(args)
+		if err != nil {
+			return "", nil, err
+		}
 		if s == "" {
 			continue
 		}
@@ -183,13 +187,13 @@ func (cc *compositeCond) ToSQL(args []any) (string, []any) {
 
 	l := len(condSegs)
 	if l == 0 {
-		return "", args
+		return "", args, nil
 	}
 	sql := strings.Join(condSegs, " "+cc.logicOp+" ")
 	if cc.logicOp == logicOpOr && l > 1 {
 		sql = "(" + sql + ")"
 	}
-	return sql, args
+	return sql, args, nil
 }
 
 type simpleCond struct {
@@ -198,8 +202,8 @@ type simpleCond struct {
 	value  any
 }
 
-func (sc *simpleCond) ToSQL(args []any) (string, []any) {
-	return sc.column + " " + sc.op + " ?", append(args, sc.value)
+func (sc *simpleCond) ToSQL(args []any) (string, []any, error) {
+	return sc.column + " " + sc.op + " ?", append(args, sc.value), nil
 }
 
 type inCond struct {
@@ -208,9 +212,9 @@ type inCond struct {
 	not    bool
 }
 
-func (ic *inCond) ToSQL(args []any) (string, []any) {
+func (ic *inCond) ToSQL(args []any) (string, []any, error) {
 	if len(ic.values) == 0 {
-		return "", args
+		return "", args, errors.New(ic.column + ": no param values")
 	}
 	holders := make([]string, len(ic.values))
 	for i := 0; i < len(ic.values); i++ {
@@ -226,7 +230,7 @@ func (ic *inCond) ToSQL(args []any) (string, []any) {
 	}
 	builder.WriteString(strings.Join(holders, ","))
 	builder.WriteString(")")
-	return builder.String(), append(args, ic.values...)
+	return builder.String(), append(args, ic.values...), nil
 }
 
 type betweenCond struct {
@@ -235,19 +239,19 @@ type betweenCond struct {
 	end    any
 }
 
-func (btc *betweenCond) ToSQL(args []any) (string, []any) {
+func (btc *betweenCond) ToSQL(args []any) (string, []any, error) {
 	if btc.start == nil && btc.end == nil {
-		return "", args
+		return "", args, nil
 	}
 
 	if btc.start != nil && btc.end == nil {
-		return btc.column + " >= ?", append(args, btc.start)
+		return btc.column + " >= ?", append(args, btc.start), nil
 	}
 
 	if btc.start == nil && btc.end != nil {
-		return btc.column + " <= ?", append(args, btc.end)
+		return btc.column + " <= ?", append(args, btc.end), nil
 	}
-	return btc.column + " between ? and ?", append(args, btc.start, btc.end)
+	return btc.column + " between ? and ?", append(args, btc.start, btc.end), nil
 }
 
 type nullCond struct {
@@ -255,12 +259,12 @@ type nullCond struct {
 	not    bool
 }
 
-func (nc *nullCond) ToSQL(args []any) (string, []any) {
+func (nc *nullCond) ToSQL(args []any) (string, []any, error) {
 	if nc.not {
-		return nc.column + " is not null", args
+		return nc.column + " is not null", args, nil
 	}
 
-	return nc.column + " is null", args
+	return nc.column + " is null", args, nil
 }
 
 type likeCond struct {
@@ -269,9 +273,9 @@ type likeCond struct {
 	likeStyle int
 }
 
-func (likec *likeCond) ToSQL(args []any) (string, []any) {
+func (likec *likeCond) ToSQL(args []any) (string, []any, error) {
 	if likec.value == "" {
-		return "", args
+		return "", args, nil
 	}
 	v := likec.value
 	switch likec.likeStyle {
@@ -282,16 +286,16 @@ func (likec *likeCond) ToSQL(args []any) (string, []any) {
 	case LikeStyleAll:
 		v = "%" + v + "%"
 	default:
-		return "", args
+		return "", args, nil
 	}
 
-	return likec.column + " like ?", append(args, v)
+	return likec.column + " like ?", append(args, v), nil
 }
 
 type scalarCond struct {
 	cond string
 }
 
-func (scalar *scalarCond) ToSQL(args []any) (string, []any) {
-	return scalar.cond, args
+func (scalar *scalarCond) ToSQL(args []any) (string, []any, error) {
+	return scalar.cond, args, nil
 }

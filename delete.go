@@ -3,6 +3,8 @@
 
 package daog
 
+import "errors"
+
 // DeleteById 根据主键id删除记录
 //
 // 参数: id 主键 , meta 表的元数据，由compile编译生成，比如  GroupInfo.GroupInfoMeta
@@ -44,10 +46,13 @@ func DeleteByMatcher[T any](tc *TransContext, matcher Matcher, meta *TableMeta[T
 		return 0, nil
 	}
 	var args []any
-	condi, args := matcher.ToSQL(args)
+	condi, args, err := matcher.ToSQL(args)
+	if err != nil {
+		return 0, err
+	}
 	if condi == "" {
 		GLogger.Info(tc.ctx, "delete must has condition")
-		return 0, nil
+		return 0, errors.New("you can't delete all rows of table error")
 	}
 
 	sql := base + " where " + condi

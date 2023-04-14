@@ -20,7 +20,10 @@ func Update[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) 
 		fieldId = meta.AutoColumn
 	}
 	m.Eq(fieldId, idValue)
-	sql, args := updateExec(meta, ins, tc.ctx, m)
+	sql, args, err := updateExec(meta, ins, tc.ctx, m)
+	if err != nil {
+		return 0, err
+	}
 
 	return execSQLCore(tc, sql, args)
 }
@@ -72,7 +75,10 @@ func UpdateByIds[T any](tc *TransContext, modifier Modifier, ids []int64, meta *
 
 // UpdateByModifier 根据Matcher条件修改多条记录，需要修改的字段值通过 Modifier 指定，表达 update table set a=?,b=? where uid=? and status=0 的类似语义
 func UpdateByModifier[T any](tc *TransContext, modifier Modifier, matcher Matcher, meta *TableMeta[T]) (int64, error) {
-	sql, args := buildModifierExec(meta, tc.ctx, modifier, matcher)
+	sql, args, err := buildModifierExec(meta, tc.ctx, modifier, matcher)
+	if err != nil {
+		return 0, err
+	}
 	if sql == "" {
 		return 0, nil
 	}

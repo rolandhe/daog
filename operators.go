@@ -51,22 +51,25 @@ func buildSelectBase[T any](meta *TableMeta[T], viewColumns []string, ctx contex
 	return "select " + columnsStr + " from " + GetTableName(ctx, meta)
 }
 
-func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher, pager *Pager, orders []*Order, viewColumns []string) (string, []any) {
+func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher, pager *Pager, orders []*Order, viewColumns []string) (string, []any, error) {
 	base := buildSelectBase(meta, viewColumns, ctx)
 	if matcher == nil {
-		return base, nil
+		return base, nil, nil
 	}
 	var args []any
-	condi, args := matcher.ToSQL(args)
-
-	if condi == "" {
-		return base + buildQuerySuffix(pager, orders), nil
+	condi, args, err := matcher.ToSQL(args)
+	if err != nil {
+		return "", nil, err
 	}
 
-	return base + " where " + condi + buildQuerySuffix(pager, orders), args
+	if condi == "" {
+		return base + buildQuerySuffix(pager, orders), nil, nil
+	}
+
+	return base + " where " + condi + buildQuerySuffix(pager, orders), args, nil
 }
 
-func countQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher) (string, []any) {
+func countQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher) (string, []any, error) {
 	var base string
 	if meta.AutoColumn == "" {
 		base = "select count(*) from " + GetTableName(ctx, meta)
@@ -75,19 +78,19 @@ func countQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher)
 	}
 
 	if matcher == nil {
-		return base, nil
+		return base, nil, nil
 	}
-	if matcher == nil {
-		return base, nil
-	}
+
 	var args []any
-	condi, args := matcher.ToSQL(args)
-
+	condi, args, err := matcher.ToSQL(args)
+	if err != nil {
+		return "", nil, err
+	}
 	if condi == "" {
-		return base, nil
+		return base, nil, nil
 	}
 
-	return base + " where " + condi, args
+	return base + " where " + condi, args, nil
 }
 
 func buildQuerySuffix(pager *Pager, orders []*Order) string {
@@ -133,10 +136,10 @@ func buildUpdateBase[T any](meta *TableMeta[T], ctx context.Context) string {
 	return "update " + GetTableName(ctx, meta) + " set " + upCondStmt
 }
 
-func updateExec[T any](meta *TableMeta[T], ins *T, ctx context.Context, matcher Matcher) (string, []any) {
+func updateExec[T any](meta *TableMeta[T], ins *T, ctx context.Context, matcher Matcher) (string, []any, error) {
 	base := buildUpdateBase(meta, ctx)
 	if matcher == nil {
-		return base, nil
+		return base, nil, nil
 	}
 	var exclude map[string]int
 	if meta.AutoColumn != "" {
@@ -145,33 +148,36 @@ func updateExec[T any](meta *TableMeta[T], ins *T, ctx context.Context, matcher 
 		}
 	}
 	args := meta.ExtractFieldValues(ins, false, exclude)
-	if matcher == nil {
-		return base, args
+	condi, args, err := matcher.ToSQL(args)
+	if err != nil {
+		return "", nil, err
 	}
-	condi, args := matcher.ToSQL(args)
 	if condi == "" {
-		return base, args
+		return base, args, nil
 	}
 
-	return base + " where " + condi, args
+	return base + " where " + condi, args, nil
 }
 
-func buildModifierExec[T any](meta *TableMeta[T], ctx context.Context, modifier Modifier, matcher Matcher) (string, []any) {
+func buildModifierExec[T any](meta *TableMeta[T], ctx context.Context, modifier Modifier, matcher Matcher) (string, []any, error) {
 	tableName := GetTableName(ctx, meta)
 	base, args := modifier.toSQL(tableName)
 	if base == "" {
-		return "", nil
+		return "", nil, nil
 	}
 
 	if matcher == nil {
-		return base, args
+		return base, args, nil
 	}
 
-	condi, args := matcher.ToSQL(args)
-	if condi == "" {
-		return base, args
+	condi, args, err := matcher.ToSQL(args)
+	if err != nil {
+		return "", nil, err
 	}
-	return base + " where " + condi, args
+	if condi == "" {
+		return base, args, nil
+	}
+	return base + " where " + condi, args, nil
 }
 
 func buildInsInfoOfRow[T any](meta *TableMeta[T], viewColumns []string) (*T, []any) {
@@ -181,8 +187,6 @@ func buildInsInfoOfRow[T any](meta *TableMeta[T], viewColumns []string) (*T, []a
 	}
 	return ins, meta.ExtractFieldValuesByColumns(ins, true, viewColumns)
 }
-
-
 
 func traceLogSQLBefore(ctx context.Context, sql string, args []any) string {
 	var argJson []byte
