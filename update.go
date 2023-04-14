@@ -58,12 +58,15 @@ func UpdateById[T any](tc *TransContext, modifier Modifier, id int64, meta *Tabl
 
 // UpdateByIds 根据多个主键修改多条记录，需要修改的字段值通过 Modifier 指定，表达 update table set a=?,b=? where id in(xx,xx)的语义
 func UpdateByIds[T any](tc *TransContext, modifier Modifier, ids []int64, meta *TableMeta[T]) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
 	m := NewMatcher()
 	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
-	m.Eq(fieldId, ConvertToAnySlice(ids))
+	m.In(fieldId, ConvertToAnySlice(ids))
 	return UpdateByModifier(tc, modifier, m, meta)
 }
 

@@ -24,12 +24,15 @@ func DeleteById[T any](tc *TransContext, id int64, meta *TableMeta[T]) (int64, e
 //
 // 返回值: 删除记录数及是否出错
 func DeleteByIds[T any](tc *TransContext, ids []int64, meta *TableMeta[T]) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
 	m := NewMatcher()
 	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
-	m.Eq(fieldId, ConvertToAnySlice(ids))
+	m.In(fieldId, ConvertToAnySlice(ids))
 	return DeleteByMatcher(tc, m, meta)
 }
 
