@@ -440,9 +440,14 @@ GetGoroutineIdFromContext 函数可以从 context.Context中读取创建TransCon
 golang的time.Time支持纳秒级别，但数据库支持秒级别即可，因此提供ttypes.NormalDate和ttypes.NormalDatetime来支持。
 他们都内置了对json序列化的支持。序列化格式通过ttypes.DateFormat和ttypes.DatetimeFormat来设置，他们缺省是yyyy-MM-dd格式。
 
+* NormalDate.ToTimePointer 方法可以返回 NormalDate 包含的*time.Time
+* NormalDatetime.ToTimePointer 方法可以返回 NormalDatetime 包含的*time.Time
+
 ## null字段值
 golang sql包支持NullString, NullTime, NullFloat64, Nullxxx类型，但这些类型没有实现json序列化、反序列化接口。daog仅仅支持NullString和NullTime,其他的不支持，
 这是因为实际的业务中，大部分情况要求字段是非空，尤其是数字数据类型。daog封装了NilableDate、NilableDatetime、NilableString三种类型，并提供一些函数用于简化开发，同时提供json序列化支持。
 
 * FromDatetime、FromDate、FromString函数用于把Time\string转换成Nilable对象；
 * NilableDate{},NilableDatetime{},NilableString{}表示null对象
+* NilableDate.ToTimePointer 方法可以返回 NilableDate 包含的*time.Time, 如果 NilableDate 包含nil，那返回nil
+* NilableDatetime.ToTimePointer 方法可以返回 NilableDatetime 包含的*time.Time， 如果 NilableDatetime 包含nil，那返回nil
