@@ -223,19 +223,13 @@ if err != nil {
 
 ```
 func create() {
-	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	
 	amount, err := decimal.NewFromString("128.0")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	t := &dal.GroupInfo{
-		Name:        "roland",
+		Name:        "roland-one",
 		MainData:    `{"a":102}`,
 		Content:     "hello world!!",
 		BinData:     []byte("byte data"),
@@ -243,6 +237,14 @@ func create() {
 		TotalAmount: amount,
 		Remark:      *ttypes.FromString("haha"),
 	}
+
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	daog.WrapTrans(tc, func(tc *daog.TransContext) error {
 		affect, err := daog.Insert(tc, t, dal.GroupInfoMeta)
 		fmt.Println(affect, t.Id, err)
@@ -269,7 +271,8 @@ func queryByIds() {
 		fmt.Println(err)
 		return
 	}
-
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
 		return daog.GetByIds(tc, []int64{1, 2}, dal.GroupInfoMeta)
 	})
@@ -286,14 +289,14 @@ func queryByIds() {
 #### 根据Matcher读取
 ```
 func queryByMatcher() {
+	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleRight).Lt(dal.GroupInfoFields.Id, 4)
 	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-
-	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleRight).Lt(dal.GroupInfoFields.Id, 4)
-
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
 		return daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta)
 	})
@@ -316,13 +319,12 @@ func update() {
 		fmt.Println(err)
 		return
 	}
-	// 无事务情况下也需要加上这段代码，用于释放底层链接
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
-	    // 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.CompleteWithPanic(err, recover())
 	}()
-	g, err := daog.GetById(tc, 1, dal.GroupInfoMeta)
+	g, err := daog.GetById(tc, 5, dal.GroupInfoMeta)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -332,6 +334,7 @@ func update() {
 	g.Name = "Eric"
 	af, err := daog.Update(tc, g, dal.GroupInfoMeta)
 	fmt.Println(af, err)
+
 }
 ```
 
@@ -344,17 +347,17 @@ func deleteById() {
 		fmt.Println(err)
 		return
 	}
-	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-	    // 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.CompleteWithPanic(err, recover())
-	}()
-	g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("delete", g)
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
+	daog.WrapTrans(tc, func(tc *daog.TransContext) error {
+		g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		fmt.Println("delete", g)
+		return err
+	})
 }
 ```
 
@@ -381,13 +384,12 @@ func queryByIdsUsingDao() {
 		fmt.Println(err)
 		return
 	}
-	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-	    // 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		daog.DefferFinalTranSupportRecover(tc, err)
-	}()
-	gs, err := dal.GroupInfoDao.GetByIds(tc,[]int64{1, 2})
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
+	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
+		return dal.GroupInfoDao.GetByIds(tc, []int64{1, 2})
+	})
+
 	if err != nil {
 		fmt.Println(err)
 	}

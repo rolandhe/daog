@@ -51,7 +51,8 @@ func query() {
 		fmt.Println(err)
 		return
 	}
-
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	g, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) (*dal.GroupInfo, error) {
 		return daog.GetById(tc, 9, dal.GroupInfoMeta)
 	})
@@ -76,7 +77,8 @@ func queryUser() {
 		fmt.Println(err)
 		return
 	}
-
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	g, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) (*dal.UserInfo, error) {
 		return daog.GetById(tc, 1, dal.UserInfoMeta)
 	})
@@ -99,7 +101,8 @@ func deleteById() {
 		fmt.Println(err)
 		return
 	}
-
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	daog.WrapTrans(tc, func(tc *daog.TransContext) error {
 		g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
 		if err != nil {
@@ -117,7 +120,8 @@ func queryByIds() {
 		fmt.Println(err)
 		return
 	}
-
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
 		return daog.GetByIds(tc, []int64{1, 2}, dal.GroupInfoMeta)
 	})
@@ -136,7 +140,8 @@ func queryByIdsUsingDao() {
 		fmt.Println(err)
 		return
 	}
-
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
 		return dal.GroupInfoDao.GetByIds(tc, []int64{1, 2})
 	})
@@ -150,14 +155,14 @@ func queryByIdsUsingDao() {
 }
 
 func queryByMatcher() {
+	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleRight).Lt(dal.GroupInfoFields.Id, 4)
 	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-
-	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleRight).Lt(dal.GroupInfoFields.Id, 4)
-
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
 		return daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta)
 	})
@@ -235,12 +240,6 @@ func countByMatcher() {
 }
 
 func create() {
-	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
 	amount, err := decimal.NewFromString("128.0")
 	if err != nil {
 		fmt.Println(err)
@@ -255,6 +254,14 @@ func create() {
 		TotalAmount: amount,
 		Remark:      *ttypes.FromString("haha"),
 	}
+
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
+	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	daog.WrapTrans(tc, func(tc *daog.TransContext) error {
 		affect, err := daog.Insert(tc, t, dal.GroupInfoMeta)
 		fmt.Println(affect, t.Id, err)
