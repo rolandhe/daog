@@ -384,10 +384,29 @@ func deleteById() {
 }
 ```
 
-### 两种事务管理
-#### 委托式
+### 三种种事务管理
+### 委托模式
 把所有的事务处理代码都内置到一个函数里，当然这个函数可以是匿名函数，也可以是命名函数，然后调用daog.WrapTrans或者daog.WrapTransWithResult来执行业务处理函数，
 在这种方式下，事务最终的提交或回滚不需要再额外处理。
+#### 自动委托式
+把所有的事务处理代码都内置到一个函数里，当然这个函数可以是匿名函数，也可以是命名函数，然后调用daog.AutoTrans 或者daog.AutoTransWithResult 来执行业务处理函数，同时事务上下文的构建也被内置到一个函数里，这个函数可以是匿名，也可以是命名的。
+在这种方式下，事务的创建及最终的提交或回滚不需要再额外处理。它是对委托模式的封装。使用模式如下，如果你不需要业务返回值，可以调用daog.AutoTrans。
+
+```
+func createUserUseAutoTrans() {
+	t := &dal.UserInfo{
+		Name:     "roland",
+		CreateAt: ttypes.NormalDatetime(time.Now()),
+		ModifyAt: *ttypes.FromDatetime(time.Now()),
+	}
+	affect, err := daog.AutoTransWithResult[int64](func() (*daog.TransContext, error) {
+		return daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
+	}, func(tc *daog.TransContext) (int64, error) {
+		return daog.Insert(tc, t, dal.UserInfoMeta)
+	})
+	fmt.Println(affect, t.Id, err)
+}
+```
 #### 自行处理式
 在创建TransContext后，需要手工处理事务的结束，必须通过一个匿名deffer函数来结束事务，匿名函数里调用 tc.CompleteWithPanic(err, recover()) 来最终结束事务。
 

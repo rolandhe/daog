@@ -29,6 +29,7 @@ func init() {
 func main() {
 	defer datasource.Shutdown()
 
+	//createUserUseAutoTrans()
 	//createUser()
 	//create()
 	query()
@@ -278,27 +279,17 @@ func create() {
 	})
 }
 
-func createUser() {
-	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
-	defer func() {
-		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
-		tc.CompleteWithPanic(err, recover())
-	}()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+func createUserUseAutoTrans() {
 	t := &dal.UserInfo{
 		Name:     "roland",
 		CreateAt: ttypes.NormalDatetime(time.Now()),
 		ModifyAt: *ttypes.FromDatetime(time.Now()),
 	}
-	affect, err := daog.Insert(tc, t, dal.UserInfoMeta)
+	affect, err := daog.AutoTransWithResult[int64](func() (*daog.TransContext, error) {
+		return daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
+	}, func(tc *daog.TransContext) (int64, error) {
+		return daog.Insert(tc, t, dal.UserInfoMeta)
+	})
 	fmt.Println(affect, t.Id, err)
 }
 

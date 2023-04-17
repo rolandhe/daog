@@ -128,6 +128,28 @@ func WrapTransWithResult[T any](tc *TransContext, workFn func(tc *TransContext) 
 	return ret, err
 }
 
+// TcCreatorFunc 创建事务上下文的回调函数
+type TcCreatorFunc func() (*TransContext, error)
+
+// AutoTrans 自动在事务内完成业务逻辑的包装函数，不返回业务返回值， 通过 tCreatorFunc 自动构建事务上下文， 然后执行 workFn 业务逻辑
+func AutoTrans(tCreatorFunc TcCreatorFunc, workFn func(tc *TransContext) error) error {
+	tc, err := tCreatorFunc()
+	if err != nil {
+		return err
+	}
+	return WrapTrans(tc, workFn)
+}
+
+// AutoTransWithResult 自动在事务内完成业务逻辑的包装函数，需要业务返回值， 通过 tCreatorFunc 自动构建事务上下文， 然后执行 workFn 业务逻辑
+func AutoTransWithResult[T any](tCreatorFunc TcCreatorFunc, workFn func(tc *TransContext) (T, error)) (T, error) {
+	tc, err := tCreatorFunc()
+	var v T
+	if err != nil {
+		return v, err
+	}
+	return WrapTransWithResult(tc, workFn)
+}
+
 // GetTraceIdFromContext 从 context.Context 中读取trace id
 func GetTraceIdFromContext(ctx context.Context) string {
 	values := ctx.Value(ctxValues)
