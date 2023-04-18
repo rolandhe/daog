@@ -46,6 +46,7 @@ func NewTransContext(datasource Datasource, txRequest txrequest.RequestStyle, tr
 	if conn, err = datasource.getDB(ctx).Conn(connCtx); err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			GLogger.Info(ctx, "get connection timeout")
+			return nil, errors.New("get connection timeout")
 		} else {
 			GLogger.Error(ctx, err)
 		}
