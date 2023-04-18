@@ -41,7 +41,14 @@ func NewTransContext(datasource Datasource, txRequest txrequest.RequestStyle, tr
 	gid := utils.QuickGetGoroutineId()
 	ctx := buildContext(gid, traceId, nil, nil)
 
-	if conn, err = datasource.getDB(ctx).Conn(context.Background()); err != nil {
+	connCtx, cancelFunc := context.WithTimeout(context.Background(), datasource.acquireConnTimeout())
+	defer cancelFunc()
+	if conn, err = datasource.getDB(ctx).Conn(connCtx); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			GLogger.Info(ctx, "get connection timeout")
+		} else {
+			GLogger.Error(ctx, err)
+		}
 		return nil, err
 	}
 	tc := &TransContext{

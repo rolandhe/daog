@@ -19,6 +19,7 @@ func init() {
 	conf := &daog.DbConf{
 		DbUrl:  "root:12345678@tcp(localhost:3306)/daog?parseTime=true&timeout=1s&readTimeout=2s&writeTimeout=2s",
 		LogSQL: true,
+		Size:   1,
 	}
 	var err error
 	datasource, err = daog.NewDatasource(conf)
@@ -29,13 +30,14 @@ func init() {
 func main() {
 	defer datasource.Shutdown()
 
+	//testMapConn()
 	//createUserUseAutoTrans()
 	//createUser()
 	//create()
 	//query()
 	//queryUser()
 	//queryRawSQLForCount()
-	queryByIds()
+	//queryByIds()
 	//queryByIdsUsingDao()
 	//queryByMatcher()
 	//queryAll()
@@ -45,6 +47,27 @@ func main() {
 
 	//deleteById()
 }
+
+//func testMapConn() {
+//	_, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
+//	//defer tc.Complete(nil)
+//	if err != nil {
+//		fmt.Println(err)
+//		return
+//	}
+//
+//	//go func() {
+//	//	time.Sleep(time.Second * 5)
+//	//	tc.Complete(nil)
+//	//}()
+//
+//	tc2, err2 := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
+//	if err2 != nil {
+//		fmt.Println(err)
+//		return
+//	}
+//	tc2.Complete(nil)
+//}
 
 func query() {
 	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")

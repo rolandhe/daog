@@ -35,6 +35,8 @@ type DbConf struct {
 	IdleTime int
 	// 该在该数据源上执行sql是是否需要把待执行的sql输出到日志
 	LogSQL bool
+	// 读取连接超时时间，单位是秒
+	GetConnTimeout int64
 }
 
 // NewDatasource 按照配置创建单个数据源对象
@@ -66,7 +68,11 @@ func NewDatasource(conf *DbConf) (Datasource, error) {
 		db.SetConnMaxLifetime(time.Duration(int64(conf.Life) * 1e9))
 	}
 
-	return &singleDatasource{db, conf.LogSQL}, nil
+	if conf.GetConnTimeout <= 0 {
+		conf.GetConnTimeout = 10
+	}
+
+	return &singleDatasource{db, conf.LogSQL, time.Second * time.Duration(conf.GetConnTimeout)}, nil
 }
 
 // NewShardingDatasource 创建多分片数据源,创建好的数据源是复合数据源，内含confs参数指定的多个数据源，也包含一个分片策略，
@@ -96,6 +102,7 @@ type Datasource interface {
 	Shutdown()
 	// IsLogSQL 本数据源是否需要输出执行的sql到日志
 	IsLogSQL() bool
+	acquireConnTimeout() time.Duration
 }
 
 // DatasourceShardingPolicy 数据源分片策略
@@ -116,8 +123,9 @@ func (h ModInt64ShardingDatasourcePolicy) Shard(shardKey any, count int) (int, e
 }
 
 type singleDatasource struct {
-	db     *sql.DB
-	logSQL bool
+	db             *sql.DB
+	logSQL         bool
+	getConnTimeout time.Duration
 }
 
 func (db *singleDatasource) getDB(ctx context.Context) *sql.DB {
@@ -129,6 +137,9 @@ func (db *singleDatasource) Shutdown() {
 
 func (db *singleDatasource) IsLogSQL() bool {
 	return db.logSQL
+}
+func (db *singleDatasource) acquireConnTimeout() time.Duration {
+	return db.getConnTimeout
 }
 
 type shardingDatasource struct {
@@ -153,4 +164,7 @@ func (db *shardingDatasource) Shutdown() {
 
 func (db *shardingDatasource) IsLogSQL() bool {
 	return db.singleDatasource[0].IsLogSQL()
+}
+func (db *shardingDatasource) acquireConnTimeout() time.Duration {
+	return db.singleDatasource[0].acquireConnTimeout()
 }
