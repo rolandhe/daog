@@ -9,7 +9,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
-	"fmt"
 	txrequest "github.com/rolandhe/daog/tx"
 	"github.com/rolandhe/daog/utils"
 )
@@ -232,11 +231,16 @@ func (tc *TransContext) Complete(e error) {
 		return
 	}
 	if tc.status == tcStatusInit {
+		var err error
 		if e != nil {
-			tc.rollbackAndReleaseConn()
+			err = tc.tx.Rollback()
 		} else {
-			tc.commitAndReleaseConn()
+			err = tc.tx.Commit()
 		}
+		if err != nil {
+			GLogger.Error(tc.ctx, err)
+		}
+		closeConn(tc)
 		tc.status = tcStatusInvalid
 	}
 }
@@ -255,35 +259,6 @@ func (tc *TransContext) check() error {
 		return invalidTcStatus
 	}
 	return nil
-}
-
-func (tc *TransContext) commitAndReleaseConn() error {
-	if tc.txRequest == txrequest.RequestNone {
-		return nil
-	}
-	if tc.status != tcStatusInit {
-		return errors.New(fmt.Sprintf("tc status error,%d", tc.status))
-	}
-	err := tc.tx.Commit()
-	if err == nil {
-		closeConn(tc)
-	}
-	return err
-}
-
-func (tc *TransContext) rollbackAndReleaseConn() error {
-	if tc.txRequest == txrequest.RequestNone {
-		return nil
-	}
-	if tc.status != tcStatusInit {
-		return errors.New(fmt.Sprintf("tc status error,%d", tc.status))
-	}
-
-	err := tc.tx.Rollback()
-	if err == nil {
-		closeConn(tc)
-	}
-	return err
 }
 
 func closeConn(tc *TransContext) {
