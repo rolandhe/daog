@@ -181,8 +181,9 @@ func queryAll() {
 		fmt.Println(err)
 		return
 	}
+	// tc 创建后必须马上跟上 defer func， 如果这之间有return或者panic，连接将被泄露
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
+	// 必须使用匿名函数，不能使用 tc.CompleteWithPanic(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.CompleteWithPanic(err, recover())
@@ -202,6 +203,7 @@ func queryByMatcherOrder() {
 		fmt.Println(err)
 		return
 	}
+	// tc 创建后必须马上跟上 defer func， 如果这之间有return或者panic，连接将被泄露
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
@@ -224,8 +226,9 @@ func countByMatcher() {
 		fmt.Println(err)
 		return
 	}
+	// tc 创建后必须马上跟上 defer func， 如果这之间有return或者panic，连接将被泄露
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
+	// 必须使用匿名函数，不能使用 tc.CompleteWithPanic(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.CompleteWithPanic(err, recover())
@@ -258,8 +261,6 @@ func create() {
 	tcCreate := func() (*daog.TransContext, error) {
 		return daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
 	}
-	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
-	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
 	daog.AutoTrans(tcCreate, func(tc *daog.TransContext) error {
 		affect, err := daog.Insert(tc, t, dal.GroupInfoMeta)
 		fmt.Println(affect, t.Id, err)
@@ -296,7 +297,8 @@ func update() {
 		fmt.Println(err)
 		return
 	}
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
+	// tc 创建后必须马上跟上 defer func， 如果这之间有return或者panic，连接将被泄露
+	// 必须使用匿名函数，不能使用 tc.CompleteWithPanic(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.CompleteWithPanic(err, recover())
@@ -325,7 +327,8 @@ func queryRawSQLForCount() {
 		fmt.Println(err)
 		return
 	}
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
+	// tc 创建后必须马上跟上 defer func， 如果这之间有return或者panic，连接将被泄露
+	// 必须使用匿名函数，不能使用 tc.CompleteWithPanic(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.CompleteWithPanic(err, recover())

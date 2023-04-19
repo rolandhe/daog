@@ -238,14 +238,10 @@ func create() {
 		Remark:      *ttypes.FromString("haha"),
 	}
 
-	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
-	if err != nil {
-		fmt.Println(err)
-		return
+	tcCreate := func() (*daog.TransContext, error) {
+		return daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
 	}
-	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
-	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
-	daog.WrapTrans(tc, func(tc *daog.TransContext) error {
+	daog.AutoTrans(tcCreate, func(tc *daog.TransContext) error {
 		affect, err := daog.Insert(tc, t, dal.GroupInfoMeta)
 		fmt.Println(affect, t.Id, err)
 		if err != nil {
@@ -266,14 +262,10 @@ func create() {
 
 ```
 func queryByIds() {
-	tc, err := daog.NewTransContext(datasource, txrequest.RequestReadonly, "trace-1001")
-	if err != nil {
-		fmt.Println(err)
-		return
+	tcCreate := func() (*daog.TransContext, error) {
+		return daog.NewTransContext(datasource, txrequest.RequestReadonly, "trace-1001")
 	}
-	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
-	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
-	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
+	gs, err := daog.AutoTransWithResult(tcCreate, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
 		return daog.GetByIds(tc, []int64{1, 2}, dal.GroupInfoMeta)
 	})
 
@@ -293,6 +285,7 @@ func queryAll() {
 		fmt.Println(err)
 		return
 	}
+	// tc 创建后必须马上跟上 defer func， 如果这之间有return或者panic，连接将被泄露
 	// 无事务情况下也需要加上这段代码，用于释放底层链接
 	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
@@ -313,14 +306,10 @@ func queryAll() {
 ```
 func queryByMatcher() {
 	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleRight).Lt(dal.GroupInfoFields.Id, 4)
-	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
-	if err != nil {
-		fmt.Println(err)
-		return
+	tcCreate := func() (*daog.TransContext, error) {
+		return daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
 	}
-	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
-	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
-	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
+	gs, err := daog.AutoTransWithResult(tcCreate, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
 		return daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta)
 	})
 
@@ -342,7 +331,8 @@ func update() {
 		fmt.Println(err)
 		return
 	}
-	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
+	// tc 创建后必须马上跟上 defer func， 如果这之间有return或者panic，连接将被泄露
+	// 必须使用匿名函数，不能使用 tc.CompleteWithPanic(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
 	defer func() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.CompleteWithPanic(err, recover())
@@ -365,14 +355,10 @@ func update() {
 
 ```
 func deleteById() {
-	tc, err := daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
-	if err != nil {
-		fmt.Println(err)
-		return
+	tcCreate := func() (*daog.TransContext, error) {
+		return daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
 	}
-	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
-	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
-	daog.WrapTrans(tc, func(tc *daog.TransContext) error {
+	daog.AutoTrans(tcCreate, func(tc *daog.TransContext) error {
 		g, err := daog.DeleteById(tc, 2, dal.GroupInfoMeta)
 		if err != nil {
 			fmt.Println(err)
@@ -384,13 +370,10 @@ func deleteById() {
 }
 ```
 
-### 三种种事务管理
-### 委托模式
-把所有的事务处理代码都内置到一个函数里，当然这个函数可以是匿名函数，也可以是命名函数，然后调用daog.WrapTrans或者daog.WrapTransWithResult来执行业务处理函数，
-在这种方式下，事务最终的提交或回滚不需要再额外处理。
-#### 自动委托式
+### 两种种事务管理
+#### 自动委模式
 把所有的事务处理代码都内置到一个函数里，当然这个函数可以是匿名函数，也可以是命名函数，然后调用daog.AutoTrans 或者daog.AutoTransWithResult 来执行业务处理函数，同时事务上下文的构建也被内置到一个函数里，这个函数可以是匿名，也可以是命名的。
-在这种方式下，事务的创建及最终的提交或回滚不需要再额外处理。它是对委托模式的封装。使用模式如下，如果你不需要业务返回值，可以调用daog.AutoTrans。
+在这种方式下，事务的创建及最终的提交或回滚不需要再额外处理。使用方式如下，如果你不需要业务返回值，可以调用daog.AutoTrans。
 
 ```
 func createUserUseAutoTrans() {
@@ -413,6 +396,33 @@ func createUserUseAutoTrans() {
 需要注意的是：
 * err在当前的函数里必须是全局的
 * 每一个会产生err的函数调用，都必须使用该全局err来接收，比如： err = XXX()
+* tc 创建后必须马上跟上 defer func， 如果这之间有return或者panic，连接将被泄露
+
+```
+func queryByMatcherOrder() {
+	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// tc 创建后必须马上跟上 defer func， 如果这之间有return或者panic，连接将被泄露
+	// 无事务情况下也需要加上这段代码，用于释放底层链接
+	// 必须使用匿名函数，不能使用 tc.Complete(err)， 因为defer 后面函数的参数在执行defer语句是就会被确定
+	defer func() {
+		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
+		tc.CompleteWithPanic(err, recover())
+	}()
+	matcher := daog.NewMatcher().Like(dal.GroupInfoFields.Name, "roland", daog.LikeStyleLeft).Lt(dal.GroupInfoFields.Id, 4)
+	gs, err := daog.QueryListMatcher(tc, matcher, dal.GroupInfoMeta, daog.NewDescOrder(dal.GroupInfoFields.Id))
+	if err != nil {
+		fmt.Println(err)
+	}
+	j, _ := json.Marshal(gs)
+	fmt.Println("queryByMatcherOrder", string(j))
+	fmt.Println(gs)
+}
+
+```
 
 ### QuickDao接口模式
 使用方式和函数模式非常类似，只是少传递TableMeta参数，以下以一个query示例来说明一下。
