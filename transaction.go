@@ -141,6 +141,26 @@ func WrapTransWithResult[T any](tc *TransContext, workFn func(tc *TransContext) 
 type TcCreatorFunc func() (*TransContext, error)
 
 // AutoTrans 自动在事务内完成业务逻辑的包装函数，不返回业务返回值， 通过 tCreatorFunc 自动构建事务上下文， 然后执行 workFn 业务逻辑
+// 如果不使用 AutoTrans 或者 AutoTransWithResult 你需要自行写一个defer 匿名函数用于最终提交或回滚事务，并且需要提前定义err变量，在业务执行过程中每个操作返回的err都需要赋值给err,而且每一步都需要判断err。如下：
+//
+//	var err error
+//	tc,err := NewTransContext(...)
+//	if err != nil {
+//	     return err
+//	}
+//
+//	defer func() {
+//	    tc.CompleteWithPanic(err, recover())
+//	}
+//	err = run1(tc, ...)
+//	if err != nil {
+//	     return err
+//	}
+//	err = run1(tc, ...)
+//	if err != nil {
+//	     return err
+//	}
+//	return nil
 func AutoTrans(tCreatorFunc TcCreatorFunc, workFn func(tc *TransContext) error) error {
 	tc, err := tCreatorFunc()
 	if err != nil {
