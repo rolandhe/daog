@@ -431,14 +431,10 @@ func queryByMatcherOrder() {
 
 ```
 func queryByIdsUsingDao() {
-	tc, err := daog.NewTransContext(datasource, txrequest.RequestReadonly, "trace-1001")
-	if err != nil {
-		fmt.Println(err)
-		return
+	tcCreate := func() (*daog.TransContext, error) {
+		return daog.NewTransContext(datasource, txrequest.RequestReadonly, "trace-1001")
 	}
-	// 注意： 创建好tc到调用WrapTransWithResult或者 WrapTrans之间不能返回或者panic，否则，会导致连接不释放
-	// 如果你的场景是需要返回或者panic，你可以是使用 queryAll 中的事务处理方式
-	gs, err := daog.WrapTransWithResult(tc, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
+	gs, err := daog.AutoTransWithResult(tcCreate, func(tc *daog.TransContext) ([]*dal.GroupInfo, error) {
 		return dal.GroupInfoDao.GetByIds(tc, []int64{1, 2})
 	})
 
