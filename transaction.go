@@ -96,6 +96,7 @@ func NewTransContextWithSharding(datasource Datasource, txRequest txrequest.Requ
 }
 
 // WrapTrans 在一个事务内执行所有的业务操作并最终根据err或者panic来判断是否提交事务。
+// Deprecated, 后面会被取消掉，请使用 AutoTrans
 // 如果不使用 WrapTrans 或者 WrapTransWithResult 你需要自行写一个defer 匿名函数用于最终提交或回滚事务，并且需要提前定义err变量，在业务执行过程中每个操作返回的err都需要赋值给err,而且每一步都需要判断err。如下：
 //
 //	var err error
@@ -126,6 +127,7 @@ func WrapTrans(tc *TransContext, workFn func(tc *TransContext) error) error {
 }
 
 // WrapTransWithResult 与WrapTrans类似，不同的是业务处理函数可以有返回值
+// Deprecated, 后面会取消掉，请使用 AutoTransWithResult
 func WrapTransWithResult[T any](tc *TransContext, workFn func(tc *TransContext) (T, error)) (T, error) {
 	var err error
 	defer func() {
