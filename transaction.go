@@ -225,7 +225,7 @@ func GetGoroutineIdFromContext(ctx context.Context) uint64 {
 
 // TransContext 事务的上下文，描述了数据事务，所有在该事务内执行的数据库操作都需要被提交或者回滚，保持原子性。在daog里要想执行数据库操作必须要确定TransContext，
 // 他是数据操作的起点，一旦一个事务确定，对应的数据库连接确定，底层物理事务确定，同时它内部维护一个状态，用于记录事务的创建、提交/回滚, TransContext最终需要被调用
-// CompleteWithPanic 或者 Complete 来进入终态，进入终态后，其生命周期即完成
+// CompleteWithPanic 来进入终态，进入终态后，其生命周期即完成
 type TransContext struct {
 	txRequest txrequest.RequestStyle
 	tx        driver.Tx
@@ -250,8 +250,11 @@ func (tc *TransContext) CompleteWithPanic(e error, fetal any) {
 }
 
 // Complete 事务最终完成，可能是提交，也可能是会管，生命周期结束. e == nil, 提交事务，否则回滚
+// Deprecated, 后面会取消掉，请使用 CompleteWithPanic
 func (tc *TransContext) Complete(e error) {
-	GLogger.Error(tc.ctx, e)
+	if e != nil {
+		GLogger.Error(tc.ctx, e)
+	}
 	if tc.status == tcStatusInvalid {
 		return
 	}
