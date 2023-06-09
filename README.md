@@ -476,3 +476,6 @@ golang sql包支持NullString, NullTime, NullFloat64, Nullxxx类型，但这些�
 * NilableDate{},NilableDatetime{},NilableString{}表示null对象
 * NilableDate.ToTimePointer 方法可以返回 NilableDate 包含的*time.Time, 如果 NilableDate 包含nil，那返回nil
 * NilableDatetime.ToTimePointer 方法可以返回 NilableDatetime 包含的*time.Time， 如果 NilableDatetime 包含nil，那返回nil
+
+## for update
+支持select for update，请使用Query*ForUpdate函数，或者 GetByIdForUpdate/GetByIdsForUpdate
