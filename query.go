@@ -244,12 +244,14 @@ func QueryQueryListMatcherWithViewColumnsForUpdate[T any](tc *TransContext, m Ma
 }
 
 func QueryQueryPagerListMatcherWithViewColumnsForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], pager *Pager, viewColumns []string, skipLocked bool, orders ...*Order) ([]*T, error) {
-	tableName := GetTableName(tc.ctx, meta)
-	sql, params, err := selectQueryCore(m, pager, orders, func() string {
-		return getSelectStat(tableName, viewColumns, skipLocked)
-	})
+	sql, params, err := selectQuery(meta, tc.ctx, m, pager, orders, viewColumns)
 	if err != nil {
 		return nil, err
+	}
+	if !skipLocked {
+		sql = sql + " for update"
+	} else {
+		sql = sql + " for update skip locked"
 	}
 	return queryRawSQLCore(tc, func() (*T, []any) {
 		return buildInsInfoOfRow(meta, viewColumns)

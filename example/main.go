@@ -34,8 +34,9 @@ func main() {
 	//createUserUseAutoTrans()
 	//createUser()
 	//create()
-	query()
+	//query()
 	//queryUser()
+	queryUserPageForUpdate()
 	//queryRawSQLForCount()
 	//queryByIds()
 	//queryByIdsUsingDao()
@@ -109,6 +110,35 @@ func queryUser() {
 	var rg dal.UserInfo
 	json.Unmarshal(j, &rg)
 	fmt.Println(rg)
+}
+
+func queryUserPageForUpdate() {
+	tcCreate := func() (*daog.TransContext, error) {
+		return daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
+	}
+	mat := daog.NewMatcher()
+	mat.In(dal.UserInfoFields.Id, []any{1, 3, 5})
+	pager := &daog.Pager{
+		PageNumber: 1,
+		PageSize:   2,
+	}
+	viewColumns := []string{
+		dal.UserInfoFields.Id,
+		dal.UserInfoFields.Name,
+		dal.UserInfoFields.CreateAt,
+	}
+	userInfos, err := daog.AutoTransWithResult(tcCreate, func(tc *daog.TransContext) ([]*dal.UserInfo, error) {
+		return daog.QueryQueryPagerListMatcherWithViewColumnsForUpdate(tc, mat, dal.UserInfoMeta, pager, viewColumns, false)
+	})
+	if err != nil {
+		fmt.Println(err)
+	}
+	j, err := json.Marshal(userInfos)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("queryUser", string(j))
+
 }
 
 func deleteById() {

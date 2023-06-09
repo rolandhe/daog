@@ -41,30 +41,6 @@ func GetTableName[T any](ctx context.Context, meta *TableMeta[T]) string {
 	return tableName
 }
 
-func getSelectStat(tableName string, viewColumns []string, skipLocked bool) string {
-	l := len(viewColumns)
-	if l == 0 {
-		return ""
-	}
-	var buf strings.Builder
-	buf.WriteString("select ")
-	for i := 0; i < l; i++ {
-		buf.WriteString(viewColumns[i])
-		if i < l-1 {
-			buf.WriteString(",")
-		}
-	}
-
-	buf.WriteString(" from ")
-	buf.WriteString(tableName)
-	if !skipLocked {
-		buf.WriteString(" for update")
-	} else {
-		buf.WriteString(" for update skip locked")
-	}
-	return buf.String()
-}
-
 func buildSelectBase[T any](meta *TableMeta[T], viewColumns []string, ctx context.Context) string {
 	columnsStr := ""
 	if len(viewColumns) == 0 {
@@ -76,13 +52,7 @@ func buildSelectBase[T any](meta *TableMeta[T], viewColumns []string, ctx contex
 }
 
 func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher, pager *Pager, orders []*Order, viewColumns []string) (string, []any, error) {
-	return selectQueryCore(matcher, pager, orders, func() string {
-		return buildSelectBase(meta, viewColumns, ctx)
-	})
-}
-
-func selectQueryCore(matcher Matcher, pager *Pager, orders []*Order, builderFn func() string) (string, []any, error) {
-	base := builderFn()
+	base := buildSelectBase(meta, viewColumns, ctx)
 	if matcher == nil {
 		return base, nil, nil
 	}
