@@ -128,7 +128,7 @@ func queryUserPageForUpdate() {
 		dal.UserInfoFields.CreateAt,
 	}
 	userInfos, err := daog.AutoTransWithResult(tcCreate, func(tc *daog.TransContext) ([]*dal.UserInfo, error) {
-		return daog.QueryQueryPagerListMatcherWithViewColumnsForUpdate(tc, mat, dal.UserInfoMeta, pager, viewColumns, false)
+		return daog.QueryPageListMatcherWithViewColumnsForUpdate(tc, mat, dal.UserInfoMeta, viewColumns, pager, true)
 	})
 	if err != nil {
 		fmt.Println(err)

@@ -41,6 +41,18 @@ func GetById[T any](tc *TransContext, id int64, meta *TableMeta[T], viewColumns 
 	return QueryOneMatcher(tc, m, meta, viewColumns...)
 }
 
+// GetByIdForUpdate  类似 GetById， 只是支持 for update
+// skipLocked, true 需要 SKIP LOCKED
+func GetByIdForUpdate[T any](tc *TransContext, id int64, meta *TableMeta[T], skipLocked bool, viewColumns ...string) ([]*T, error) {
+	m := NewMatcher()
+	fieldId := TableIdColumnName
+	if meta.AutoColumn != "" {
+		fieldId = meta.AutoColumn
+	}
+	m.Eq(fieldId, id)
+	return QueryListMatcherWithViewColumnsForUpdate(tc, m, meta, viewColumns, skipLocked)
+}
+
 // GetByIds 根据主键数组返回多条数据
 // 可变参数 viewColumns：
 //
@@ -62,6 +74,21 @@ func GetByIds[T any](tc *TransContext, ids []int64, meta *TableMeta[T], viewColu
 	return QueryPageListMatcherWithViewColumns(tc, m, meta, viewColumns, nil)
 }
 
+// GetByIdsForUpdate  类似 GetByIds， 只是支持 for update
+// skipLocked, true 需要 SKIP LOCKED
+func GetByIdsForUpdate[T any](tc *TransContext, ids []int64, meta *TableMeta[T], skipLocked bool, viewColumns ...string) ([]*T, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	m := NewMatcher()
+	fieldId := TableIdColumnName
+	if meta.AutoColumn != "" {
+		fieldId = meta.AutoColumn
+	}
+	m.In(fieldId, ConvertToAnySlice(ids))
+	return QueryListMatcherWithViewColumnsForUpdate(tc, m, meta, viewColumns, skipLocked)
+}
+
 // QueryListMatcher 根据查询条件 Matcher 返回多条数据， 通过与 Matcher 有关的相关函数来构建查询条件
 // orders 可变参数：
 //
@@ -70,6 +97,12 @@ func GetByIds[T any](tc *TransContext, ids []int64, meta *TableMeta[T], viewColu
 //	每个条件可以指定排序表字段名及是否是升序要求
 func QueryListMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T], orders ...*Order) ([]*T, error) {
 	return QueryPageListMatcher(tc, m, meta, nil, orders...)
+}
+
+// QueryListMatcherForUpdate  与 QueryListMatcher 类似，只是支持 for update
+// skipLocked, true 需要 SKIP LOCKED
+func QueryListMatcherForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], skipLocked bool, orders ...*Order) ([]*T, error) {
+	return QueryPageListMatcherWithViewColumnsForUpdate(tc, m, meta, nil, nil, skipLocked, orders...)
 }
 
 // QueryListMatcherWithViewColumns 根据查询条件 Matcher 返回多条数据，每条数据可以是一个视图， 通过与 Matcher 有关的相关函数来构建查询条件, viewColumns 指定需要查询的表字段名，表示一个视图
@@ -82,6 +115,12 @@ func QueryListMatcherWithViewColumns[T any](tc *TransContext, m Matcher, meta *T
 	return QueryPageListMatcherWithViewColumns(tc, m, meta, viewColumns, nil, orders...)
 }
 
+// QueryListMatcherWithViewColumnsForUpdate 与 QueryListMatcherWithViewColumns 类似，只是支持 for update
+// skipLocked, true 需要 SKIP LOCKED
+func QueryListMatcherWithViewColumnsForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], viewColumns []string, skipLocked bool, orders ...*Order) ([]*T, error) {
+	return QueryPageListMatcherWithViewColumnsForUpdate(tc, m, meta, viewColumns, nil, skipLocked, orders...)
+}
+
 // QueryPageListMatcher 根据查询条件 Matcher 及 Pager 返回一页数据， 通过与 Matcher 有关的相关函数来构建查询条件， 根据 Pager 相关函数来构建分页条件
 // orders 可变参数：
 //
@@ -92,6 +131,12 @@ func QueryListMatcherWithViewColumns[T any](tc *TransContext, m Matcher, meta *T
 // pager 参数，可以为nil，如果为nil，不分页
 func QueryPageListMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T], pager *Pager, orders ...*Order) ([]*T, error) {
 	return QueryPageListMatcherWithViewColumns(tc, m, meta, nil, pager, orders...)
+}
+
+// QueryPageListMatcherForUpdate 与 QueryPageListMatcher 类似， 只是支持 for update
+// skipLocked, true 需要 SKIP LOCKED
+func QueryPageListMatcherForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], pager *Pager, skipLocked bool, orders ...*Order) ([]*T, error) {
+	return QueryPageListMatcherWithViewColumnsForUpdate(tc, m, meta, nil, pager, skipLocked, orders...)
 }
 
 // QueryPageListMatcherWithViewColumns 根据查询条件 Matcher 及 Pager 返回一页数据， 通过与 Matcher 有关的相关函数来构建查询条件， 根据 Pager 相关函数来构建分页条件， viewColumns 指定需要查询的表字段名，表示一个视图
@@ -112,6 +157,23 @@ func QueryPageListMatcherWithViewColumns[T any](tc *TransContext, m Matcher, met
 	return queryRawSQLCore(tc, func() (*T, []any) {
 		return buildInsInfoOfRow(meta, viewColumns)
 	}, sql, args...)
+}
+
+// QueryPageListMatcherWithViewColumnsForUpdate 与 QueryPageListMatcherWithViewColumns 类似， 只是支持 for update
+// skipLocked, true 需要 SKIP LOCKED
+func QueryPageListMatcherWithViewColumnsForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], viewColumns []string, pager *Pager, skipLocked bool, orders ...*Order) ([]*T, error) {
+	sql, params, err := selectQuery(meta, tc.ctx, m, pager, orders, viewColumns)
+	if err != nil {
+		return nil, err
+	}
+	if !skipLocked {
+		sql = sql + " for update"
+	} else {
+		sql = sql + " for update skip locked"
+	}
+	return queryRawSQLCore(tc, func() (*T, []any) {
+		return buildInsInfoOfRow(meta, viewColumns)
+	}, sql, params...)
 }
 
 // BatchHandler 处理一批从表中读取的数据的回调函数
@@ -178,6 +240,19 @@ func QueryOneMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T], vie
 	return ins, nil
 }
 
+// QueryOneMatcherForUpdate 与 QueryOneMatcher， 只是支持 for update
+// skipLocked, true 需要 SKIP LOCKED
+func QueryOneMatcherForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], skipLocked bool, viewColumns ...string) (*T, error) {
+	rows, err := QueryListMatcherWithViewColumnsForUpdate(tc, m, meta, viewColumns, skipLocked)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, err
+	}
+	return rows[0], nil
+}
+
 // ExtractScanFieldPoints 从指定的 *T 类型的对象中抽取出所需要的 field的指针，它是一个回调函数，用于 QueryRawSQL 或者 QueryRawSQLByBatchHandle 函数，
 // 其目的是把从数据库读取的一行数据填充到指定 *T 对象中，这对于执行一个原生的 sql 非常有用。
 type ExtractScanFieldPoints[T any] func(ins *T) []any
@@ -199,63 +274,6 @@ func QueryRawSQLByBatchHandle[T any](tc *TransContext, batchSize int, handler Ba
 		ins := new(T)
 		return ins, extract(ins)
 	}, sql, args...)
-}
-
-func QueryQueryByIdForUpdate[T any](tc *TransContext, id int64, meta *TableMeta[T], skipLocked bool, orders ...*Order) ([]*T, error) {
-	m := NewMatcher()
-	fieldId := TableIdColumnName
-	if meta.AutoColumn != "" {
-		fieldId = meta.AutoColumn
-	}
-	m.Eq(fieldId, id)
-	return QueryQueryListMatcherForUpdate(tc, m, meta, skipLocked, orders...)
-}
-
-func QueryQueryListByIdsForUpdate[T any](tc *TransContext, ids []int64, meta *TableMeta[T], skipLocked bool, orders ...*Order) ([]*T, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	m := NewMatcher()
-	fieldId := TableIdColumnName
-	if meta.AutoColumn != "" {
-		fieldId = meta.AutoColumn
-	}
-	m.In(fieldId, ConvertToAnySlice(ids))
-	return QueryQueryListMatcherForUpdate(tc, m, meta, skipLocked, orders...)
-}
-
-func QueryQueryListMatcherForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], skipLocked bool, orders ...*Order) ([]*T, error) {
-	return QueryQueryPagerListMatcherWithViewColumnsForUpdate(tc, m, meta, nil, meta.Columns, skipLocked, orders...)
-}
-
-func QueryOneMatcherForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], skipLocked bool, viewColumns ...string) (*T, error) {
-	rows, err := QueryQueryListMatcherWithViewColumnsForUpdate(tc, m, meta, viewColumns, skipLocked)
-	if err != nil {
-		return nil, err
-	}
-	if len(rows) == 0 {
-		return nil, err
-	}
-	return rows[0], nil
-}
-
-func QueryQueryListMatcherWithViewColumnsForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], viewColumns []string, skipLocked bool, orders ...*Order) ([]*T, error) {
-	return QueryQueryPagerListMatcherWithViewColumnsForUpdate(tc, m, meta, nil, viewColumns, skipLocked, orders...)
-}
-
-func QueryQueryPagerListMatcherWithViewColumnsForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], pager *Pager, viewColumns []string, skipLocked bool, orders ...*Order) ([]*T, error) {
-	sql, params, err := selectQuery(meta, tc.ctx, m, pager, orders, viewColumns)
-	if err != nil {
-		return nil, err
-	}
-	if !skipLocked {
-		sql = sql + " for update"
-	} else {
-		sql = sql + " for update skip locked"
-	}
-	return queryRawSQLCore(tc, func() (*T, []any) {
-		return buildInsInfoOfRow(meta, viewColumns)
-	}, sql, params...)
 }
 
 // Count 表达 select count(*)  语义，其条件通过 Matcher 确定
