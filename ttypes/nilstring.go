@@ -18,7 +18,13 @@ type NilableString struct {
 // FromString 转换string类型为 NilableString 类型，返回值为指针，如果接收变量为 NilableString 类型，需要使用加*号来解引用: *nilableString
 func FromString(s string) *NilableString {
 	return &NilableString{
-		sql.NullString{s, true},
+		sql.NullString{String: s, Valid: true},
+	}
+}
+
+func GetNilString() *NilableString {
+	return &NilableString{
+		sql.NullString{Valid: true},
 	}
 }
 
@@ -36,7 +42,7 @@ func (s *NilableString) StringNilAsDefault(def string) string {
 }
 
 // UnmarshalText 实现 encoding.TextUnmarshaler 接口
-func (s *NilableString) UnmarshalText(b []byte) error{
+func (s *NilableString) UnmarshalText(b []byte) error {
 	if len(b) == 0 {
 		s.Valid = false
 		return nil
@@ -53,7 +59,7 @@ func (s *NilableString) UnmarshalText(b []byte) error{
 }
 
 // MarshalText 实现 encoding.TextMarshaler 接口
-func (s NilableString) MarshalText() ([]byte, error) {
+func (s *NilableString) MarshalText() ([]byte, error) {
 	if !s.Valid {
 		return []byte("null"), nil
 	}

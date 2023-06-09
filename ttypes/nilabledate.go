@@ -19,12 +19,18 @@ type NilableDate struct {
 // FromDate 转换time.Time类型为 NilableDate 类型，返回值为指针，如果接收变量为 NilableDate 类型，需要使用加*号来解引用: *nilableDate
 func FromDate(d time.Time) *NilableDate {
 	return &NilableDate{
-		sql.NullTime{d, true},
+		NullTime: sql.NullTime{Time: d, Valid: true},
+	}
+}
+
+func GetNilDateValue() *NilableDate {
+	return &NilableDate{
+		NullTime: sql.NullTime{Valid: false},
 	}
 }
 
 // String 实现 fmt.Stringer 接口
-func (ndt NilableDate) String() string {
+func (ndt *NilableDate) String() string {
 	if !ndt.Valid {
 		return "<nil>"
 	}
@@ -32,13 +38,13 @@ func (ndt NilableDate) String() string {
 }
 
 // UnmarshalJSON 实现 json.Unmarshaler
-func (d *NilableDate) UnmarshalJSON(b []byte) error {
+func (ndt *NilableDate) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 {
-		d.Valid = false
+		ndt.Valid = false
 		return nil
 	}
 	if bytes.Compare(b, nullJsonValue) == 0 {
-		d.Valid = false
+		ndt.Valid = false
 		return nil
 	}
 	value := strings.Trim(string(b), `"`)   //get rid of "
@@ -47,22 +53,22 @@ func (d *NilableDate) UnmarshalJSON(b []byte) error {
 		daog.GLogger.SimpleLogError(err)
 		return err
 	}
-	d.Time = t
-	d.Valid = true
+	ndt.Time = t
+	ndt.Valid = true
 	return nil
 }
 
 // MarshalJSON 实现 json.Marshaler 接口
-func (d NilableDate) MarshalJSON() ([]byte, error) {
-	if !d.Valid {
+func (ndt *NilableDate) MarshalJSON() ([]byte, error) {
+	if !ndt.Valid {
 		return []byte("null"), nil
 	}
-	return []byte(`"` + d.Time.Format(DateFormat) + `"`), nil
+	return []byte(`"` + ndt.Time.Format(DateFormat) + `"`), nil
 }
 
-func (d *NilableDate) ToTimePointer() *time.Time {
-	if !d.Valid {
+func (ndt *NilableDate) ToTimePointer() *time.Time {
+	if !ndt.Valid {
 		return nil
 	}
-	return &d.Time
+	return &ndt.Time
 }

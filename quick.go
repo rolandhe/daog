@@ -16,6 +16,8 @@ type QuickDao[T any] interface {
 	GetByIds(tc *TransContext, ids []int64, viewColumns ...string) ([]*T, error)
 	// QueryListMatcher 封装 QueryListMatcher 函数
 	QueryListMatcher(tc *TransContext, m Matcher, orders ...*Order) ([]*T, error)
+	// QueryListMatcherWithViewColumns 封装 QueryListMatcherWithViewColumns 函数
+	QueryListMatcherWithViewColumns(tc *TransContext, m Matcher, viewColumns []string, orders ...*Order) ([]*T, error)
 	// QueryPageListMatcher 封装 QueryPageListMatcher 函数
 	QueryPageListMatcher(tc *TransContext, m Matcher, pager *Pager, orders ...*Order) ([]*T, error)
 	// QueryPageListMatcherWithViewColumns 封装 QueryPageListMatcherWithViewColumns 函数
@@ -30,6 +32,15 @@ type QuickDao[T any] interface {
 	QueryRawSQL(tc *TransContext, extract ExtractScanFieldPoints[T], sql string, args ...any) ([]*T, error)
 	// QueryRawSQLByBatchHandle 封装 QueryRawSQLByBatchHandle 函数
 	QueryRawSQLByBatchHandle(tc *TransContext, batchSize int, handler BatchHandler[T], extract ExtractScanFieldPoints[T], sql string, args ...any) error
+
+	QueryQueryByIdForUpdate(tc *TransContext, id int64, skipLocked bool, orders ...*Order) ([]*T, error)
+	QueryQueryListByIdsForUpdate(tc *TransContext, ids []int64, skipLocked bool, orders ...*Order) ([]*T, error)
+	QueryOneMatcherForUpdate(tc *TransContext, m Matcher, skipLocked bool, viewColumns ...string) (*T, error)
+
+	QueryQueryListMatcherForUpdate(tc *TransContext, m Matcher, skipLocked bool, orders ...*Order) ([]*T, error)
+	QueryQueryListMatcherWithViewColumnsForUpdate(tc *TransContext, m Matcher, viewColumns []string, skipLocked bool, orders ...*Order) ([]*T, error)
+	QueryQueryPagerListMatcherWithViewColumnsForUpdate(tc *TransContext, m Matcher, pager *Pager, viewColumns []string, skipLocked bool, orders ...*Order) ([]*T, error)
+
 	// Count 封装 Count 函数
 	Count(tc *TransContext, m Matcher) (int64, error)
 
@@ -80,6 +91,9 @@ func (dao *baseQuickDao[T]) GetByIds(tc *TransContext, ids []int64, viewColumns 
 func (dao *baseQuickDao[T]) QueryListMatcher(tc *TransContext, m Matcher, orders ...*Order) ([]*T, error) {
 	return QueryListMatcher(tc, m, dao.meta, orders...)
 }
+func (dao *baseQuickDao[T]) QueryListMatcherWithViewColumns(tc *TransContext, m Matcher, viewColumns []string, orders ...*Order) ([]*T, error) {
+	return QueryListMatcherWithViewColumns(tc, m, dao.meta, viewColumns, orders...)
+}
 
 func (dao *baseQuickDao[T]) QueryPageListMatcher(tc *TransContext, m Matcher, pager *Pager, orders ...*Order) ([]*T, error) {
 	return QueryPageListMatcher(tc, m, dao.meta, pager, orders...)
@@ -107,6 +121,27 @@ func (dao *baseQuickDao[T]) QueryRawSQL(tc *TransContext, extract ExtractScanFie
 
 func (dao *baseQuickDao[T]) QueryRawSQLByBatchHandle(tc *TransContext, batchSize int, handler BatchHandler[T], extract ExtractScanFieldPoints[T], sql string, args ...any) error {
 	return QueryRawSQLByBatchHandle(tc, batchSize, handler, extract, sql, args...)
+}
+
+func (dao *baseQuickDao[T]) QueryQueryByIdForUpdate(tc *TransContext, id int64, skipLocked bool, orders ...*Order) ([]*T, error) {
+	return QueryQueryByIdForUpdate(tc, id, dao.meta, skipLocked, orders...)
+}
+func (dao *baseQuickDao[T]) QueryQueryListByIdsForUpdate(tc *TransContext, ids []int64, skipLocked bool, orders ...*Order) ([]*T, error) {
+	return QueryQueryListByIdsForUpdate(tc, ids, dao.meta, skipLocked, orders...)
+}
+
+func (dao *baseQuickDao[T]) QueryOneMatcherForUpdate(tc *TransContext, m Matcher, skipLocked bool, viewColumns ...string) (*T, error) {
+	return QueryOneMatcherForUpdate(tc, m, dao.meta, skipLocked, viewColumns...)
+}
+
+func (dao *baseQuickDao[T]) QueryQueryListMatcherForUpdate(tc *TransContext, m Matcher, skipLocked bool, orders ...*Order) ([]*T, error) {
+	return QueryQueryListMatcherForUpdate(tc, m, dao.meta, skipLocked, orders...)
+}
+func (dao *baseQuickDao[T]) QueryQueryListMatcherWithViewColumnsForUpdate(tc *TransContext, m Matcher, viewColumns []string, skipLocked bool, orders ...*Order) ([]*T, error) {
+	return QueryQueryListMatcherWithViewColumnsForUpdate(tc, m, dao.meta, viewColumns, skipLocked, orders...)
+}
+func (dao *baseQuickDao[T]) QueryQueryPagerListMatcherWithViewColumnsForUpdate(tc *TransContext, m Matcher, pager *Pager, viewColumns []string, skipLocked bool, orders ...*Order) ([]*T, error) {
+	return QueryQueryPagerListMatcherWithViewColumnsForUpdate(tc, m, dao.meta, pager, viewColumns, skipLocked, orders...)
 }
 
 func (dao *baseQuickDao[T]) Count(tc *TransContext, m Matcher) (int64, error) {

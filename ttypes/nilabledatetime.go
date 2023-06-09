@@ -19,16 +19,21 @@ type NilableDatetime struct {
 // FromDatetime 转换 time.Time 类型为 NilableDatetime 类型，返回值为指针，如果接收变量为 NilableDatetime 类型，需要使用加*号来解引用: *nilableDatetime
 func FromDatetime(d time.Time) *NilableDatetime {
 	return &NilableDatetime{
-		sql.NullTime{d, true},
+		sql.NullTime{Time: d, Valid: true},
+	}
+}
+func GetNilDatetimeValue() *NilableDatetime {
+	return &NilableDatetime{
+		NullTime: sql.NullTime{Valid: false},
 	}
 }
 
 // String 实现 fmt.Stringer 接口
-func (ndt NilableDatetime) String() string {
-	if !ndt.Valid {
+func (s *NilableDatetime) String() string {
+	if !s.Valid {
 		return "<nil>"
 	}
-	return ndt.Time.Format(DatetimeFormat)
+	return s.Time.Format(DatetimeFormat)
 }
 
 // UnmarshalJSON 实现 json.Unmarshaler
@@ -53,7 +58,7 @@ func (s *NilableDatetime) UnmarshalJSON(b []byte) error {
 }
 
 // MarshalJSON 实现 json.Marshaler 接口
-func (s NilableDatetime) MarshalJSON() ([]byte, error) {
+func (s *NilableDatetime) MarshalJSON() ([]byte, error) {
 	if !s.Valid {
 		return []byte("null"), nil
 	}

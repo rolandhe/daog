@@ -72,6 +72,16 @@ func QueryListMatcher[T any](tc *TransContext, m Matcher, meta *TableMeta[T], or
 	return QueryPageListMatcher(tc, m, meta, nil, orders...)
 }
 
+// QueryListMatcherWithViewColumns 根据查询条件 Matcher 返回多条数据，每条数据可以是一个视图， 通过与 Matcher 有关的相关函数来构建查询条件, viewColumns 指定需要查询的表字段名，表示一个视图
+// orders 可变参数：
+//
+//	可以传入一个、多个或者零个排序条件
+//
+//	每个条件可以指定排序表字段名及是否是升序要求
+func QueryListMatcherWithViewColumns[T any](tc *TransContext, m Matcher, meta *TableMeta[T], viewColumns []string, orders ...*Order) ([]*T, error) {
+	return QueryPageListMatcherWithViewColumns(tc, m, meta, viewColumns, nil, orders...)
+}
+
 // QueryPageListMatcher 根据查询条件 Matcher 及 Pager 返回一页数据， 通过与 Matcher 有关的相关函数来构建查询条件， 根据 Pager 相关函数来构建分页条件
 // orders 可变参数：
 //
@@ -189,6 +199,61 @@ func QueryRawSQLByBatchHandle[T any](tc *TransContext, batchSize int, handler Ba
 		ins := new(T)
 		return ins, extract(ins)
 	}, sql, args...)
+}
+
+func QueryQueryByIdForUpdate[T any](tc *TransContext, id int64, meta *TableMeta[T], skipLocked bool, orders ...*Order) ([]*T, error) {
+	m := NewMatcher()
+	fieldId := TableIdColumnName
+	if meta.AutoColumn != "" {
+		fieldId = meta.AutoColumn
+	}
+	m.Eq(fieldId, id)
+	return QueryQueryListMatcherForUpdate(tc, m, meta, skipLocked, orders...)
+}
+
+func QueryQueryListByIdsForUpdate[T any](tc *TransContext, ids []int64, meta *TableMeta[T], skipLocked bool, orders ...*Order) ([]*T, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	m := NewMatcher()
+	fieldId := TableIdColumnName
+	if meta.AutoColumn != "" {
+		fieldId = meta.AutoColumn
+	}
+	m.In(fieldId, ConvertToAnySlice(ids))
+	return QueryQueryListMatcherForUpdate(tc, m, meta, skipLocked, orders...)
+}
+
+func QueryQueryListMatcherForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], skipLocked bool, orders ...*Order) ([]*T, error) {
+	return QueryQueryPagerListMatcherWithViewColumnsForUpdate(tc, m, meta, nil, meta.Columns, skipLocked, orders...)
+}
+
+func QueryOneMatcherForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], skipLocked bool, viewColumns ...string) (*T, error) {
+	rows, err := QueryQueryListMatcherWithViewColumnsForUpdate(tc, m, meta, viewColumns, skipLocked)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, err
+	}
+	return rows[0], nil
+}
+
+func QueryQueryListMatcherWithViewColumnsForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], viewColumns []string, skipLocked bool, orders ...*Order) ([]*T, error) {
+	return QueryQueryPagerListMatcherWithViewColumnsForUpdate(tc, m, meta, nil, viewColumns, skipLocked, orders...)
+}
+
+func QueryQueryPagerListMatcherWithViewColumnsForUpdate[T any](tc *TransContext, m Matcher, meta *TableMeta[T], pager *Pager, viewColumns []string, skipLocked bool, orders ...*Order) ([]*T, error) {
+	tableName := GetTableName(tc.ctx, meta)
+	sql, params, err := selectQueryCore(m, pager, orders, func() string {
+		return getSelectStat(tableName, viewColumns, skipLocked)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return queryRawSQLCore(tc, func() (*T, []any) {
+		return buildInsInfoOfRow(meta, viewColumns)
+	}, sql, params...)
 }
 
 // Count 表达 select count(*)  语义，其条件通过 Matcher 确定

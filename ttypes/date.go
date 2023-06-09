@@ -31,14 +31,26 @@ var (
 // NormalDate 支持按日期格式输出的日期类型, 格式由 DateFormat 全局变量指定, 实现 fmt.Stringer, driver.Valuer, json.Unmarshaler, json.Marshaler 接口
 type NormalDate time.Time
 
+func ParseNormalDate(sDate string) (*NormalDate, error) {
+	t, err := time.Parse(DateFormat, sDate)
+	if err != nil {
+		return nil, err
+	}
+	ndt := NormalDate(t)
+	return &ndt, nil
+}
+
 // Value 实现 driver.Valuer
-func (ndt NormalDate) Value() (driver.Value, error) {
-	return time.Time(ndt), nil
+func (ndt *NormalDate) Value() (driver.Value, error) {
+	return *ndt.ToTimePointer(), nil
 }
 
 // String 实现 fmt.Stringer 接口
-func (ndt NormalDate) String() string {
-	return time.Time(ndt).Format(DateFormat)
+func (ndt *NormalDate) String() string {
+	return ndt.ToTimePointer().Format(DateFormat)
+}
+func (ndt *NormalDate) MonthFmtString() string {
+	return ndt.ToTimePointer().Format("2006-01")
 }
 
 // UnmarshalJSON 实现 json.Unmarshaler
@@ -57,8 +69,8 @@ func (ndt *NormalDate) UnmarshalJSON(b []byte) error {
 }
 
 // MarshalJSON 实现 json.Marshaler 接口
-func (ndt NormalDate) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + time.Time(ndt).Format(DateFormat) + `"`), nil
+func (ndt *NormalDate) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + ndt.ToTimePointer().Format(DateFormat) + `"`), nil
 }
 func (ndt *NormalDate) ToTimePointer() *time.Time {
 	return (*time.Time)(ndt)
