@@ -24,12 +24,12 @@ func FromDatetime(d time.Time) *NilableDatetime {
 }
 func GetNilDatetimeValue() *NilableDatetime {
 	return &NilableDatetime{
-		NullTime: sql.NullTime{Valid: false},
+		sql.NullTime{Valid: false},
 	}
 }
 
 // String 实现 fmt.Stringer 接口
-func (s *NilableDatetime) String() string {
+func (s NilableDatetime) String() string {
 	if !s.Valid {
 		return "<nil>"
 	}
@@ -58,7 +58,7 @@ func (s *NilableDatetime) UnmarshalJSON(b []byte) error {
 }
 
 // MarshalJSON 实现 json.Marshaler 接口
-func (s *NilableDatetime) MarshalJSON() ([]byte, error) {
+func (s NilableDatetime) MarshalJSON() ([]byte, error) {
 	if !s.Valid {
 		return []byte("null"), nil
 	}

@@ -40,17 +40,18 @@ func ParseNormalDate(sDate string) (*NormalDate, error) {
 	return &ndt, nil
 }
 
+func (ndt *NormalDate) MonthFmtString() string {
+	return ndt.ToTimePointer().Format("2006-01")
+}
+
 // Value 实现 driver.Valuer
-func (ndt *NormalDate) Value() (driver.Value, error) {
+func (ndt NormalDate) Value() (driver.Value, error) {
 	return *ndt.ToTimePointer(), nil
 }
 
 // String 实现 fmt.Stringer 接口
-func (ndt *NormalDate) String() string {
+func (ndt NormalDate) String() string {
 	return ndt.ToTimePointer().Format(DateFormat)
-}
-func (ndt *NormalDate) MonthFmtString() string {
-	return ndt.ToTimePointer().Format("2006-01")
 }
 
 // UnmarshalJSON 实现 json.Unmarshaler
@@ -69,7 +70,7 @@ func (ndt *NormalDate) UnmarshalJSON(b []byte) error {
 }
 
 // MarshalJSON 实现 json.Marshaler 接口
-func (ndt *NormalDate) MarshalJSON() ([]byte, error) {
+func (ndt NormalDate) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + ndt.ToTimePointer().Format(DateFormat) + `"`), nil
 }
 func (ndt *NormalDate) ToTimePointer() *time.Time {

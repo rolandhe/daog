@@ -24,7 +24,7 @@ func FromString(s string) *NilableString {
 
 func GetNilString() *NilableString {
 	return &NilableString{
-		sql.NullString{Valid: true},
+		sql.NullString{Valid: false},
 	}
 }
 
@@ -59,7 +59,7 @@ func (s *NilableString) UnmarshalText(b []byte) error {
 }
 
 // MarshalText 实现 encoding.TextMarshaler 接口
-func (s *NilableString) MarshalText() ([]byte, error) {
+func (s NilableString) MarshalText() ([]byte, error) {
 	if !s.Valid {
 		return []byte("null"), nil
 	}

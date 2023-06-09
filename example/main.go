@@ -34,7 +34,7 @@ func main() {
 	//createUserUseAutoTrans()
 	//createUser()
 	//create()
-	//query()
+	query()
 	//queryUser()
 	//queryRawSQLForCount()
 	//queryByIds()

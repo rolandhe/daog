@@ -29,12 +29,12 @@ func ParseNormalDatetime(sDate string) (*NormalDatetime, error) {
 }
 
 // Value 实现 driver.Valuer
-func (ndt *NormalDatetime) Value() (driver.Value, error) {
+func (ndt NormalDatetime) Value() (driver.Value, error) {
 	return *ndt.ToTimePointer(), nil
 }
 
 // String 实现 fmt.Stringer 接口
-func (ndt *NormalDatetime) String() string {
+func (ndt NormalDatetime) String() string {
 	return ndt.ToTimePointer().Format(DatetimeFormat)
 }
 
@@ -55,7 +55,7 @@ func (ndt *NormalDatetime) UnmarshalJSON(b []byte) error {
 }
 
 // MarshalJSON 实现 json.Marshaler 接口
-func (ndt *NormalDatetime) MarshalJSON() ([]byte, error) {
+func (ndt NormalDatetime) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + ndt.ToTimePointer().Format(DatetimeFormat) + `"`), nil
 }
 
