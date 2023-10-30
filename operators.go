@@ -15,6 +15,7 @@ import (
 )
 
 const TableIdColumnName = "id"
+const maxLogStringLen = 512 * 1024
 
 // ConvertToAnySlice 把泛型的slice转换成 any类型的slice，在应用系统的上层往往是泛型slice，通过强类型校验来防止出错，
 // 但在sql driver底层需要 []any进行参数传递，二者不能被编译器自动转换，所以需要该函数来转换
@@ -41,18 +42,32 @@ func GetTableName[T any](ctx context.Context, meta *TableMeta[T]) string {
 	return tableName
 }
 
-func buildSelectBase[T any](meta *TableMeta[T], viewColumns []string, ctx context.Context) string {
+func buildSelectBase[T any](meta *TableMeta[T], view *View, ctx context.Context) string {
 	columnsStr := ""
-	if len(viewColumns) == 0 {
+	if view == nil || len(view.viewColumns) == 0 {
 		columnsStr = strings.Join(meta.Columns, ",")
 	} else {
-		columnsStr = strings.Join(viewColumns, ",")
+		var includeColumns []string
+		if view.include {
+			includeColumns = view.viewColumns
+		} else {
+			var excludeMap = make(map[string]int)
+			for _, c := range view.viewColumns {
+				excludeMap[c] = 1
+			}
+			for _, c := range meta.Columns {
+				if excludeMap[c] == 0 {
+					includeColumns = append(includeColumns, c)
+				}
+			}
+		}
+		columnsStr = strings.Join(includeColumns, ",")
 	}
 	return "select " + columnsStr + " from " + GetTableName(ctx, meta)
 }
 
-func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher, pager *Pager, orders []*Order, viewColumns []string) (string, []any, error) {
-	base := buildSelectBase(meta, viewColumns, ctx)
+func selectQuery[T any](meta *TableMeta[T], ctx context.Context, matcher Matcher, pager *Pager, orders []*Order, view *View) (string, []any, error) {
+	base := buildSelectBase(meta, view, ctx)
 	if matcher == nil {
 		return base, nil, nil
 	}
@@ -180,17 +195,26 @@ func buildModifierExec[T any](meta *TableMeta[T], ctx context.Context, modifier 
 	return base + " where " + condi, args, nil
 }
 
-func buildInsInfoOfRow[T any](meta *TableMeta[T], viewColumns []string) (*T, []any) {
+func buildInsInfoOfRow[T any](meta *TableMeta[T], view *View) (*T, []any) {
 	ins := new(T)
-	if len(viewColumns) == 0 {
+	if view == nil || len(view.viewColumns) == 0 {
 		return ins, meta.ExtractFieldValues(ins, true, nil)
 	}
-	return ins, meta.ExtractFieldValuesByColumns(ins, true, viewColumns)
+	if view.include {
+		return ins, meta.ExtractFieldValuesByColumns(ins, true, view.viewColumns)
+	} else {
+		exclude := make(map[string]int)
+		for _, c := range view.viewColumns {
+			exclude[c] = 1
+		}
+		return ins, meta.ExtractFieldValues(ins, true, exclude)
+	}
 }
 
 func traceLogSQLBefore(ctx context.Context, sql string, args []any) string {
 	var argJson []byte
 	md5data := []byte(sql)
+
 	argJson, err := json.Marshal(args)
 	if err != nil {
 		GLogger.Error(ctx, err)
@@ -199,10 +223,39 @@ func traceLogSQLBefore(ctx context.Context, sql string, args []any) string {
 	}
 	sumData := md5.Sum(md5data)
 	sqlMd5 := utils.ToUpperHexString(sumData[:])
-	GLogger.ExecSQLBefore(ctx, sql, argJson, sqlMd5)
+	outArgJson := argJson
+	smallArgs, changed := shortArgs(args)
+	if changed {
+		outArgJson, err = json.Marshal(smallArgs)
+		if err != nil {
+			GLogger.Error(ctx, err)
+			outArgJson = argJson
+		}
+	}
+	GLogger.ExecSQLBefore(ctx, sql, outArgJson, sqlMd5)
 	return sqlMd5
 }
 
 func traceLogSQLAfter(ctx context.Context, sqlMd5 string, startTime int64) {
 	GLogger.ExecSQLAfter(ctx, sqlMd5, time.Now().UnixMilli()-startTime)
+}
+
+func shortArgs(args []any) ([]any, bool) {
+	if len(args) == 0 {
+		return args, false
+	}
+	changed := false
+	ret := make([]any, len(args))
+	for i, v := range args {
+		if s, ok := v.(string); ok {
+			if len(s) >= maxLogStringLen {
+				ret[i] = s[:1024] + "..."
+				changed = true
+				continue
+			}
+		}
+		ret[i] = v
+	}
+
+	return ret, changed
 }
