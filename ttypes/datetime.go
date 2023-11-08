@@ -20,7 +20,25 @@ var (
 type NormalDatetime time.Time
 
 func ParseNormalDatetime(sDate string) (*NormalDatetime, error) {
+	t, err := time.ParseInLocation(DatetimeFormat, sDate, time.Local)
+	if err != nil {
+		return nil, err
+	}
+	ndt := NormalDatetime(t)
+	return &ndt, nil
+}
+
+func ParseNormalDatetimeInUTC(sDate string) (*NormalDatetime, error) {
 	t, err := time.Parse(DatetimeFormat, sDate)
+	if err != nil {
+		return nil, err
+	}
+	ndt := NormalDatetime(t)
+	return &ndt, nil
+}
+
+func ParseNormalDatetimeInLocation(sDate string, loc *time.Location) (*NormalDatetime, error) {
+	t, err := time.ParseInLocation(DatetimeFormat, sDate, loc)
 	if err != nil {
 		return nil, err
 	}
