@@ -62,8 +62,8 @@ func (ndt *NormalDatetime) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	value := strings.Trim(string(b), `"`)       //get rid of "
-	t, err := time.Parse(DatetimeFormat, value) //parse time
+	value := strings.Trim(string(b), `"`)                             //get rid of "
+	t, err := time.ParseInLocation(DatetimeFormat, value, time.Local) //parse time
 	if err != nil {
 		daog.GLogger.SimpleLogError(err)
 		return err

@@ -47,8 +47,8 @@ func (ndt *NilableDate) UnmarshalJSON(b []byte) error {
 		ndt.Valid = false
 		return nil
 	}
-	value := strings.Trim(string(b), `"`)   //get rid of "
-	t, err := time.Parse(DateFormat, value) //parse time
+	value := strings.Trim(string(b), `"`)                         //get rid of "
+	t, err := time.ParseInLocation(DateFormat, value, time.Local) //parse time
 	if err != nil {
 		daog.GLogger.SimpleLogError(err)
 		return err

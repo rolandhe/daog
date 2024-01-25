@@ -77,8 +77,8 @@ func (ndt *NormalDate) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 || bytes.Compare(b, nullJsonValue) == 0 {
 		return nil
 	}
-	value := strings.Trim(string(b), `"`)   //get rid of "
-	t, err := time.Parse(DateFormat, value) //parse time
+	value := strings.Trim(string(b), `"`)                         //get rid of "
+	t, err := time.ParseInLocation(DateFormat, value, time.Local) //parse time
 	if err != nil {
 		daog.GLogger.SimpleLogError(err)
 		return err
