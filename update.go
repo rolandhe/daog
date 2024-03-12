@@ -9,6 +9,15 @@ import (
 	"time"
 )
 
+type fieldExtractor[T any] struct {
+	ins *T
+	meta *TableMeta[T]
+}
+
+func (fe * fieldExtractor[T]) Extract(fieldName string) any{
+	return fe.meta.LookupFieldFunc(fieldName,fe.ins,true)
+}
+
 // Update 更新一条数据，把 *T类型的 ins 更新到数据，ins中的主键必须被设置
 // meta 表的元数据，由compile编译生成，比如  GroupInfo.GroupInfoMeta
 // 返回值是 更新的数据的条数，是0或者1
@@ -20,6 +29,11 @@ func Update[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) 
 		fieldId = meta.AutoColumn
 	}
 	m.Eq(fieldId, idValue)
+
+	if err := auoFillField(tc,ins,meta);err != nil{
+		return 0, err
+	}
+
 	sql, args, err := updateExec(meta, ins, tc.ctx, m)
 	if err != nil {
 		return 0, err
@@ -73,8 +87,21 @@ func UpdateByIds[T any](tc *TransContext, modifier Modifier, ids []int64, meta *
 	return UpdateByModifier(tc, modifier, m, meta)
 }
 
+
 // UpdateByModifier 根据Matcher条件修改多条记录，需要修改的字段值通过 Modifier 指定，表达 update table set a=?,b=? where uid=? and status=0 的类似语义
 func UpdateByModifier[T any](tc *TransContext, modifier Modifier, matcher Matcher, meta *TableMeta[T]) (int64, error) {
+	if AddNewModifyFieldBeforeUpdate != nil{
+		if err := AddNewModifyFieldBeforeUpdate(tc.ExtInfo,modifier, func(fieldName string) bool {
+			for _,name := range meta.Columns {
+				if name == fieldName {
+					return true
+				}
+			}
+			return false
+		});err !=nil{
+			return 0, err
+		}
+	}
 	sql, args, err := buildModifierExec(meta, tc.ctx, modifier, matcher)
 	if err != nil {
 		return 0, err

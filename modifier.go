@@ -21,7 +21,9 @@ type pair struct {
 
 // NewModifier 创建 Modifier 对象
 func NewModifier() Modifier {
-	return &internalModifier{}
+	return &internalModifier{
+		preventRepeat: map[string]*pair{},
+	}
 }
 
 // Modifier 描述 update 语义中set cause的生成，通过 Modifier 来避免自己拼接sql片段，降低出错概率，
@@ -35,21 +37,46 @@ type Modifier interface {
 }
 
 type internalModifier struct {
+	preventRepeat map[string]*pair
 	modifies []*pair
 }
 
 func (m *internalModifier) Add(column string, value any) Modifier {
-	m.modifies = append(m.modifies, &pair{column, value, 0})
+	old,ok := m.preventRepeat[column]
+	if !ok {
+		old.value = value
+		old.self = 0
+		return m
+	}
+	p :=&pair{column, value, 0}
+	m.preventRepeat[column] = p
+	m.modifies = append(m.modifies, p)
 	return m
 }
 
 func (m *internalModifier) SelfAdd(column string, value any) Modifier {
-	m.modifies = append(m.modifies, &pair{column, value, 1})
+	old,ok := m.preventRepeat[column]
+	if !ok {
+		old.value = value
+		old.self = 1
+		return m
+	}
+	p :=&pair{column, value, 1}
+	m.preventRepeat[column] = p
+	m.modifies = append(m.modifies, p)
 	return m
 }
 
 func (m *internalModifier) SelfMinus(column string, value any) Modifier {
-	m.modifies = append(m.modifies, &pair{column, value, 2})
+	old,ok := m.preventRepeat[column]
+	if !ok {
+		old.value = value
+		old.self = 2
+		return m
+	}
+	p :=&pair{column, value, 2}
+	m.preventRepeat[column] = p
+	m.modifies = append(m.modifies, p)
 	return m
 }
 

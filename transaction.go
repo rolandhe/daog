@@ -15,6 +15,8 @@ import (
 
 type tcStatus int
 
+
+
 const (
 	TraceID               = "trace-id"
 	goroutineID           = "Goroutine-Id"
@@ -233,6 +235,7 @@ type TransContext struct {
 	status    tcStatus
 	ctx       context.Context
 	LogSQL    bool
+	ExtInfo map[string]any
 }
 
 // CompleteWithPanic 事务最终完成，可能是提交，也可能是会管，生命周期结束.
@@ -284,7 +287,17 @@ func (tc *TransContext) begin() (err error) {
 	tc.tx, err = tc.conn.BeginTx(context.Background(), &sql.TxOptions{
 		ReadOnly: tc.txRequest == txrequest.RequestReadonly,
 	})
-	return err
+	if err != nil{
+		return err
+	}
+	if TransBegunInterceptor != nil{
+		err = TransBegunInterceptor(tc)
+		if err != nil{
+			tc.tx.Rollback()
+			return err
+		}
+	}
+	return nil
 }
 
 func (tc *TransContext) check() error {

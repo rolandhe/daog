@@ -37,6 +37,10 @@ func Insert[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) 
 		}
 	}
 
+	if err := auoFillField(tc,ins,meta);err != nil{
+		return 0, err
+	}
+
 	var builder strings.Builder
 	builder.WriteString("insert into ")
 	builder.WriteString(tableName)
@@ -81,4 +85,16 @@ func execInsert(tc *TransContext, sql string, args []any, auto bool) (int64, int
 
 	id, err := result.LastInsertId()
 	return affectRow, id, err
+}
+
+
+func auoFillField[T any](tc *TransContext, ins *T, meta *TableMeta[T]) error {
+	if ChangeFieldOfInsBeforeWrite != nil{
+		err := ChangeFieldOfInsBeforeWrite(tc.ExtInfo,&fieldExtractor[T]{
+			ins: ins,
+			meta: meta,
+		})
+		return err
+	}
+	return nil
 }
