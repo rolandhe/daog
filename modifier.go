@@ -43,7 +43,7 @@ type internalModifier struct {
 
 func (m *internalModifier) Add(column string, value any) Modifier {
 	old,ok := m.preventRepeat[column]
-	if !ok {
+	if ok {
 		old.value = value
 		old.self = 0
 		return m
@@ -56,7 +56,7 @@ func (m *internalModifier) Add(column string, value any) Modifier {
 
 func (m *internalModifier) SelfAdd(column string, value any) Modifier {
 	old,ok := m.preventRepeat[column]
-	if !ok {
+	if ok {
 		old.value = value
 		old.self = 1
 		return m
@@ -69,7 +69,7 @@ func (m *internalModifier) SelfAdd(column string, value any) Modifier {
 
 func (m *internalModifier) SelfMinus(column string, value any) Modifier {
 	old,ok := m.preventRepeat[column]
-	if !ok {
+	if ok {
 		old.value = value
 		old.self = 2
 		return m
