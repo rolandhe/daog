@@ -22,6 +22,11 @@ func (fe * fieldExtractor[T]) Extract(fieldName string) any{
 // meta 表的元数据，由compile编译生成，比如  GroupInfo.GroupInfoMeta
 // 返回值是 更新的数据的条数，是0或者1
 func Update[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) {
+	if BeforeUpdateCallback != nil{
+		if err := BeforeUpdateCallback(ins);err != nil{
+			return 0, err
+		}
+	}
 	idValue := meta.LookupFieldFunc(TableIdColumnName, ins, false)
 	m := NewMatcher()
 	fieldId := TableIdColumnName

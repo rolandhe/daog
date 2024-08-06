@@ -19,6 +19,10 @@ type pair struct {
 	self   int
 }
 
+func (p *pair) isSelf() bool {
+	return p.self == selfAdd || p.self == selfMinus
+}
+
 // NewModifier 创建 Modifier 对象
 func NewModifier() Modifier {
 	return &internalModifier{
@@ -34,47 +38,48 @@ type Modifier interface {
 	SelfAdd(column string, value any) Modifier
 	SelfMinus(column string, value any) Modifier
 	toSQL(tableName string) (string, []any)
+	getPureChangePairs() ([]string, []any)
 }
 
 type internalModifier struct {
 	preventRepeat map[string]*pair
-	modifies []*pair
+	modifies      []*pair
 }
 
 func (m *internalModifier) Add(column string, value any) Modifier {
-	old,ok := m.preventRepeat[column]
+	old, ok := m.preventRepeat[column]
 	if ok {
 		old.value = value
 		old.self = 0
 		return m
 	}
-	p :=&pair{column, value, 0}
+	p := &pair{column, value, 0}
 	m.preventRepeat[column] = p
 	m.modifies = append(m.modifies, p)
 	return m
 }
 
 func (m *internalModifier) SelfAdd(column string, value any) Modifier {
-	old,ok := m.preventRepeat[column]
+	old, ok := m.preventRepeat[column]
 	if ok {
 		old.value = value
 		old.self = 1
 		return m
 	}
-	p :=&pair{column, value, 1}
+	p := &pair{column, value, 1}
 	m.preventRepeat[column] = p
 	m.modifies = append(m.modifies, p)
 	return m
 }
 
 func (m *internalModifier) SelfMinus(column string, value any) Modifier {
-	old,ok := m.preventRepeat[column]
+	old, ok := m.preventRepeat[column]
 	if ok {
 		old.value = value
 		old.self = 2
 		return m
 	}
-	p :=&pair{column, value, 2}
+	p := &pair{column, value, 2}
 	m.preventRepeat[column] = p
 	m.modifies = append(m.modifies, p)
 	return m
@@ -98,4 +103,17 @@ func (m *internalModifier) toSQL(tableName string) (string, []any) {
 		args[i] = p.value
 	}
 	return "update " + tableName + " set " + strings.Join(modStmt, ","), args
+}
+
+func (m *internalModifier) getPureChangePairs() ([]string, []any) {
+	var columns []string
+	var values []any
+	for _, p := range m.modifies {
+		if p.isSelf() {
+			continue
+		}
+		columns = append(columns, p.column)
+		values = append(values, p.value)
+	}
+	return columns, values
 }

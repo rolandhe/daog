@@ -15,6 +15,11 @@ import (
 //
 // 返回值: 插入的记录数，是否出错
 func Insert[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) {
+	if BeforeInsertCallback != nil {
+		if err := BeforeInsertCallback(ins); err != nil {
+			return 0, err
+		}
+	}
 	tableName := GetTableName(tc.ctx, meta)
 	var insertColumns []string
 	var holder []string
@@ -37,7 +42,7 @@ func Insert[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) 
 		}
 	}
 
-	if err := auoFillField(tc,ins,meta);err != nil{
+	if err := auoFillField(tc, ins, meta); err != nil {
 		return 0, err
 	}
 
@@ -87,11 +92,10 @@ func execInsert(tc *TransContext, sql string, args []any, auto bool) (int64, int
 	return affectRow, id, err
 }
 
-
 func auoFillField[T any](tc *TransContext, ins *T, meta *TableMeta[T]) error {
-	if ChangeFieldOfInsBeforeWrite != nil{
-		err := ChangeFieldOfInsBeforeWrite(tc.ExtInfo,&fieldExtractor[T]{
-			ins: ins,
+	if ChangeFieldOfInsBeforeWrite != nil {
+		err := ChangeFieldOfInsBeforeWrite(tc.ExtInfo, &fieldExtractor[T]{
+			ins:  ins,
 			meta: meta,
 		})
 		return err

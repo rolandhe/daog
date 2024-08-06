@@ -176,6 +176,14 @@ func updateExec[T any](meta *TableMeta[T], ins *T, ctx context.Context, matcher 
 
 func buildModifierExec[T any](meta *TableMeta[T], ctx context.Context, modifier Modifier, matcher Matcher) (string, []any, error) {
 	tableName := GetTableName(ctx, meta)
+	if BeforeModifyCallback != nil {
+		pcColumns, pcValues := modifier.getPureChangePairs()
+		if len(pcColumns) > 0 {
+			if err := BeforeModifyCallback(tableName, modifier, pcColumns, pcValues); err != nil {
+				return "", nil, err
+			}
+		}
+	}
 	base, args := modifier.toSQL(tableName)
 	if base == "" {
 		return "", nil, nil
