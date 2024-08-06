@@ -23,7 +23,8 @@ func (fe * fieldExtractor[T]) Extract(fieldName string) any{
 // 返回值是 更新的数据的条数，是0或者1
 func Update[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) {
 	if BeforeUpdateCallback != nil{
-		if err := BeforeUpdateCallback(ins);err != nil{
+		tableName := GetTableName(tc.ctx, meta)
+		if err := BeforeUpdateCallback(tableName,ins);err != nil{
 			return 0, err
 		}
 	}

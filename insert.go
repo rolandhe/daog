@@ -15,12 +15,13 @@ import (
 //
 // 返回值: 插入的记录数，是否出错
 func Insert[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) {
+	tableName := GetTableName(tc.ctx, meta)
 	if BeforeInsertCallback != nil {
-		if err := BeforeInsertCallback(ins); err != nil {
+		if err := BeforeInsertCallback(tableName, ins); err != nil {
 			return 0, err
 		}
 	}
-	tableName := GetTableName(tc.ctx, meta)
+
 	var insertColumns []string
 	var holder []string
 	var exclude map[string]int
