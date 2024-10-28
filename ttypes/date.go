@@ -23,11 +23,6 @@ import (
 	"time"
 )
 
-var (
-	// DateFormat 指定日期格式
-	DateFormat = "2006-01-02"
-)
-
 // NormalDate 支持按日期格式输出的日期类型, 格式由 DateFormat 全局变量指定, 实现 fmt.Stringer, driver.Valuer, json.Unmarshaler, json.Marshaler 接口
 type NormalDate time.Time
 

@@ -18,6 +18,9 @@ type NilableDatetime struct {
 
 // FromDatetime 转换 time.Time 类型为 NilableDatetime 类型，返回值为指针，如果接收变量为 NilableDatetime 类型，需要使用加*号来解引用: *nilableDatetime
 func FromDatetime(d time.Time) *NilableDatetime {
+	if ZeroTimeAsNil && d.IsZero() {
+		return GetNilDatetimeValue()
+	}
 	return &NilableDatetime{
 		sql.NullTime{Time: d, Valid: true},
 	}
