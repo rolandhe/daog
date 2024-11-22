@@ -22,6 +22,15 @@ func FromString(s string) *NilableString {
 	}
 }
 
+func FromStringEmptyAsNil(s string) *NilableString {
+	if s == "" {
+		return GetNilString()
+	}
+	return &NilableString{
+		sql.NullString{String: s, Valid: true},
+	}
+}
+
 func GetNilString() *NilableString {
 	return &NilableString{
 		sql.NullString{Valid: false},
