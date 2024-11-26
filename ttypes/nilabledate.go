@@ -6,7 +6,6 @@ package ttypes
 import (
 	"bytes"
 	"database/sql"
-	"github.com/rolandhe/daog"
 	"strings"
 	"time"
 )
@@ -18,7 +17,7 @@ type NilableDate struct {
 
 // FromDate 转换time.Time类型为 NilableDate 类型，返回值为指针，如果接收变量为 NilableDate 类型，需要使用加*号来解引用: *nilableDate
 func FromDate(d time.Time) *NilableDate {
-	if  ZeroTimeAsNil && d.IsZero() {
+	if ZeroTimeAsNil && d.IsZero() {
 		return GetNilDateValue()
 	}
 	return &NilableDate{
@@ -53,7 +52,6 @@ func (ndt *NilableDate) UnmarshalJSON(b []byte) error {
 	value := strings.Trim(string(b), `"`)                         //get rid of "
 	t, err := time.ParseInLocation(DateFormat, value, time.Local) //parse time
 	if err != nil {
-		daog.GLogger.SimpleLogError(err)
 		return err
 	}
 	ndt.Time = t

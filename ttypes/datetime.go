@@ -6,12 +6,9 @@ package ttypes
 import (
 	"bytes"
 	"database/sql/driver"
-	"github.com/rolandhe/daog"
 	"strings"
 	"time"
 )
-
-
 
 // NormalDatetime 支持按日期格式输出的日期类型, 格式由 DatetimeFormat 全局变量指定, 实现fmt.Stringer, driver.Valuer, json.Unmarshaler, json.Marshaler 接口
 type NormalDatetime time.Time
@@ -62,7 +59,6 @@ func (ndt *NormalDatetime) UnmarshalJSON(b []byte) error {
 	value := strings.Trim(string(b), `"`)                             //get rid of "
 	t, err := time.ParseInLocation(DatetimeFormat, value, time.Local) //parse time
 	if err != nil {
-		daog.GLogger.SimpleLogError(err)
 		return err
 	}
 	*ndt = NormalDatetime(t) //set result using the pointer

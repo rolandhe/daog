@@ -138,10 +138,10 @@ func buildQuerySuffix(pager *Pager, orders []*Order) string {
 	}
 	return ordStat + limitStat
 }
-func buildUpdateBase[T any](meta *TableMeta[T], ctx context.Context) string {
+func buildUpdateBase[T any](meta *TableMeta[T], ctx context.Context, exclude map[string]int) string {
 	var upConds []string
 	for _, v := range meta.Columns {
-		if v == meta.AutoColumn {
+		if exclude[v] == 1 {
 			continue
 		}
 		upConds = append(upConds, v+" = ?")
@@ -152,16 +152,12 @@ func buildUpdateBase[T any](meta *TableMeta[T], ctx context.Context) string {
 }
 
 func updateExec[T any](meta *TableMeta[T], ins *T, ctx context.Context, matcher Matcher) (string, []any, error) {
-	base := buildUpdateBase(meta, ctx)
+	exclude := meta.shouldExcludeColumns(ins, true)
+	base := buildUpdateBase(meta, ctx, exclude)
 	if matcher == nil {
 		return base, nil, nil
 	}
-	var exclude map[string]int
-	if meta.AutoColumn != "" {
-		exclude = map[string]int{
-			meta.AutoColumn: 1,
-		}
-	}
+
 	args := meta.ExtractFieldValues(ins, false, exclude)
 	condi, args, err := matcher.ToSQL(args)
 	if err != nil {

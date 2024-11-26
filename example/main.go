@@ -32,11 +32,11 @@ func main() {
 
 	//testMapConn()
 	//createUserUseAutoTrans()
-	//createUser()
+	//createUser()z
 	//create()
 	//query()
 	//queryUser()
-	queryUserPageForUpdate()
+	//queryUserPageForUpdate()
 	//queryRawSQLForCount()
 	//queryByIds()
 	//queryByIdsUsingDao()
@@ -44,7 +44,7 @@ func main() {
 	//queryAll()
 	//queryByMatcherOrder()
 	//countByMatcher()
-	//update()
+	update()
 
 	//deleteById()
 }
@@ -309,9 +309,9 @@ func create() {
 
 func createUserUseAutoTrans() {
 	t := &dal.UserInfo{
-		Name:     "roland",
-		CreateAt: ttypes.NormalDatetime(time.Now()),
-		ModifyAt: *ttypes.FromDatetime(time.Now()),
+		Name: "roland",
+		//CreateAt: ttypes.NormalDatetime(time.Now()),
+		//ModifyAt: *ttypes.FromDatetime(time.Now()),
 	}
 	affect, err := daog.AutoTransWithResult[int64](func() (*daog.TransContext, error) {
 		return daog.NewTransContext(datasource, txrequest.RequestWrite, "trace-1001")
@@ -333,15 +333,16 @@ func update() {
 		// 注意：后面代码的error都要使用err变量来接收，否则在发生错误的情况下，事务不会被回滚
 		tc.CompleteWithPanic(err, recover())
 	}()
-	g, err := daog.GetById(tc, 5, dal.GroupInfoMeta)
+	g, err := dal.UserInfoDao.GetById(tc, 1)
 	if err != nil {
 		fmt.Println(err)
 	}
 	j, _ := json.Marshal(g)
 	fmt.Println("query", string(j))
 
-	g.Name = "Eric"
-	af, err := daog.Update(tc, g, dal.GroupInfoMeta)
+	g.Name = "Eric1"
+
+	af, err := dal.UserInfoDao.Update(tc, g)
 	fmt.Println(af, err)
 
 }

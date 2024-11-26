@@ -6,7 +6,6 @@ package ttypes
 import (
 	"bytes"
 	"database/sql"
-	"github.com/rolandhe/daog"
 	"strings"
 	"time"
 )
@@ -52,7 +51,6 @@ func (s *NilableDatetime) UnmarshalJSON(b []byte) error {
 	value := strings.Trim(string(b), `"`)                             //get rid of "
 	t, err := time.ParseInLocation(DatetimeFormat, value, time.Local) //parse time
 	if err != nil {
-		daog.GLogger.SimpleLogError(err)
 		return err
 	}
 	s.Time = t

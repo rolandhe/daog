@@ -4,6 +4,8 @@
 
 package daog
 
+import "github.com/rolandhe/daog/ttypes"
+
 // TableMeta daog中需要表的元数据，基于元数据来自动生成sql，把从数据库读取的数据分配给表的实体对象，TableMeta对应的实例会由compile工具生成。
 // TableMeta 需要知道表名，表的列名，自增长字段名称，以及需要提供一个函数LookupFieldFunc，该函数负责根据表的字段名称找到该名称对应的属性。
 type TableMeta[T any] struct {
@@ -15,7 +17,8 @@ type TableMeta[T any] struct {
 	Table        string
 	Columns      []string
 	// 自增长字段的名称，在insert时，表实体对象中对应的field会被自动填充
-	AutoColumn string
+	AutoColumn   string
+	StampColumns map[string]int
 }
 
 // ExtractFieldValues 从给定的T对象中抽取属性值，并返回，抽取的属性值可能是属性指针，也可能是属性的值，
@@ -24,12 +27,42 @@ func (meta *TableMeta[T]) ExtractFieldValues(ins *T, point bool, exclude map[str
 	var ret []any
 
 	for _, column := range meta.Columns {
-		if exclude != nil && exclude[column] != 0 {
+		if exclude != nil && exclude[column] == 1 {
 			continue
 		}
+
 		ret = append(ret, meta.LookupFieldFunc(column, ins, point))
 	}
 	return ret
+}
+
+func (meta *TableMeta[T]) shouldExcludeColumns(ins *T, isUpdate bool) map[string]int {
+	exclude := make(map[string]int)
+	if meta.AutoColumn != "" {
+		exclude[meta.AutoColumn] = 1
+	}
+	if len(meta.StampColumns) == 0 {
+		return exclude
+	}
+	targetValue := 1
+	if isUpdate {
+		targetValue = 2
+	}
+	for _, column := range meta.Columns {
+		confValue := meta.StampColumns[column]
+		if confValue&targetValue != targetValue {
+			continue
+		}
+		fp := meta.LookupFieldFunc(column, ins, true)
+		concreteValue, ok := fp.(*ttypes.NormalDatetime)
+		if !ok {
+			continue
+		}
+		if isUpdate || concreteValue.ToTimePointer().IsZero() {
+			exclude[column] = 1
+		}
+	}
+	return exclude
 }
 
 // ExtractFieldValuesByColumns 与ExtractFieldValues，但它仅仅抽取通过 columns 参数指定的数据表列所对应的属性

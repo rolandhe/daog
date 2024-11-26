@@ -22,20 +22,18 @@ func Insert[T any](tc *TransContext, ins *T, meta *TableMeta[T]) (int64, error) 
 		}
 	}
 
+	exclude := meta.shouldExcludeColumns(ins, false)
+
 	var insertColumns []string
 	var holder []string
-	var exclude map[string]int
-	if meta.AutoColumn == "" {
+	if len(exclude) == 0 {
 		insertColumns = meta.Columns
 		for range insertColumns {
 			holder = append(holder, "?")
 		}
 	} else {
-		exclude = map[string]int{
-			meta.AutoColumn: 1,
-		}
 		for _, column := range meta.Columns {
-			if column == meta.AutoColumn {
+			if exclude[column] == 1 {
 				continue
 			}
 			insertColumns = append(insertColumns, column)

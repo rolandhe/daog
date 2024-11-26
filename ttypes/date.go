@@ -18,7 +18,6 @@ package ttypes
 import (
 	"bytes"
 	"database/sql/driver"
-	"github.com/rolandhe/daog"
 	"strings"
 	"time"
 )
@@ -75,7 +74,6 @@ func (ndt *NormalDate) UnmarshalJSON(b []byte) error {
 	value := strings.Trim(string(b), `"`)                         //get rid of "
 	t, err := time.ParseInLocation(DateFormat, value, time.Local) //parse time
 	if err != nil {
-		daog.GLogger.SimpleLogError(err)
 		return err
 	}
 	*ndt = NormalDate(t) //set result using the pointer
