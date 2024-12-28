@@ -54,10 +54,7 @@ var UserInfoMeta = &daog.TableMeta[UserInfo]{
 
 		return nil
 	},
-	StampColumns: map[string]int{
-		"create_at": 1,
-		"modify_at": 3,
-	},
+	StampColumns: nil,
 }
 
 var UserInfoDao daog.QuickDao[UserInfo] = &struct {
@@ -70,5 +67,5 @@ type UserInfo struct {
 	Id       int64
 	Name     string
 	CreateAt ttypes.NormalDatetime
-	ModifyAt ttypes.NormalDatetime
+	ModifyAt ttypes.NilableDatetime
 }

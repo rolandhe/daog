@@ -75,3 +75,10 @@ func newScalarCond(cond string) SQLCond {
 		cond: cond,
 	}
 }
+func newBitwiseAndCond(column string, mask any, target any) SQLCond {
+	return &bitwiseAndCond{
+		column: column,
+		mask:   mask,
+		target: target,
+	}
+}

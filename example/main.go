@@ -44,8 +44,8 @@ func main() {
 	//queryAll()
 	//queryByMatcherOrder()
 	//countByMatcher()
-	update()
-
+	//update()
+	queryByMatcherBit()
 	//deleteById()
 }
 
@@ -205,6 +205,23 @@ func queryByMatcher() {
 	fmt.Println(gs)
 }
 
+func queryByMatcherBit() {
+	matcher := daog.NewMatcher().BitwiseAnd(dal.BitsSampleFields.Status, 1, 1)
+	tcCreate := func() (*daog.TransContext, error) {
+		return daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
+	}
+	gs, err := daog.AutoTransWithResult(tcCreate, func(tc *daog.TransContext) ([]*dal.BitsSample, error) {
+		return daog.QueryListMatcher(tc, matcher, dal.BitsSampleMeta)
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	j, _ := json.Marshal(gs)
+	fmt.Println("queryByMatcher", string(j))
+	fmt.Println(gs)
+}
+
 func queryAll() {
 	tc, err := daog.NewTransContext(datasource, txrequest.RequestNone, "trace-1001")
 	if err != nil {
@@ -285,7 +302,6 @@ func create() {
 		BinData:     []byte("byte data"),
 		CreateAt:    ttypes.NormalDatetime(time.Now()),
 		TotalAmount: amount,
-		Remark:      *ttypes.FromString("haha"),
 	}
 
 	tcCreate := func() (*daog.TransContext, error) {

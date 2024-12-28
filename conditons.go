@@ -94,6 +94,10 @@ type Matcher interface {
 	// AddScalar 增加一个标量条件，即增加一个条件字符串，比如 "id = 100", 或者 "name = 'Joe'",
 	// 注意 尽量不要使用这个方法，因为它容易引起sql注入，如果你需要使用这个方法，你一定要使用转义来防止sql注入
 	AddScalar(cond string) Matcher
+
+	// BitwiseAnd , 位与， a & 1 = 1
+	// 注意 mask, target 类型必须相同，支持 int int8 int16 int32 int64
+	BitwiseAnd(column string, mask, target any) Matcher
 }
 
 type compositeCond struct {
@@ -163,6 +167,16 @@ func (cc *compositeCond) Between(column string, start any, end any) Matcher {
 
 func (cc *compositeCond) AddScalar(cond string) Matcher {
 	cc.conds = append(cc.conds, newScalarCond(cond))
+	return cc
+}
+
+func (cc *compositeCond) BitAnd(column string, mask, target any) Matcher {
+	cc.conds = append(cc.conds, newBitwiseAndCond(column, mask, target))
+	return cc
+}
+
+func (cc *compositeCond) BitwiseAnd(column string, mask, target any) Matcher {
+	cc.conds = append(cc.conds, newBitwiseAndCond(column, mask, target))
 	return cc
 }
 
@@ -301,4 +315,33 @@ func (scalar *scalarCond) ToSQL(args []any) (string, []any, error) {
 		return "", nil, errors.New("empty scalarCond")
 	}
 	return scalar.cond, args, nil
+}
+
+type bitwiseAndCond struct {
+	column string
+	mask   any
+	target any
+}
+
+func (bitAnd *bitwiseAndCond) ToSQL(args []any) (string, []any, error) {
+	var ok bool
+	switch bitAnd.target.(type) {
+	case int:
+		_, ok = bitAnd.mask.(int)
+	case int8:
+		_, ok = bitAnd.mask.(int8)
+	case int16:
+		_, ok = bitAnd.mask.(int16)
+	case int32:
+		_, ok = bitAnd.mask.(int32)
+	case int64:
+		_, ok = bitAnd.mask.(int64)
+	default:
+		return "", nil, errors.New("invalid bitwiseAndCond")
+	}
+	if !ok {
+		return "", nil, errors.New("invalid bitwiseAndCond, type is not same")
+	}
+
+	return bitAnd.column + "&?=?", append(args, bitAnd.mask, bitAnd.target), nil
 }

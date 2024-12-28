@@ -1,0 +1,3 @@
+
+dao:
+	$(shell compilex  -i ./example.sql -pkg dal -o ../)
