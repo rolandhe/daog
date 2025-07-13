@@ -20,7 +20,7 @@ type QuickDao[T any] interface {
 	GetByIdWithViewObj(tc *TransContext, id int64, view *View) (*T, error)
 
 	// GetByIdForUpdate 封装 GetByIdForUpdate 函数
-	GetByIdForUpdate(tc *TransContext, id int64, skipLocked bool, viewColumns ...string) ([]*T, error)
+	GetByIdForUpdate(tc *TransContext, id int64, skipLocked bool, viewColumns ...string) (*T, error)
 
 	// GetByIds 封装 GetByIds 函数
 	GetByIds(tc *TransContext, ids []int64, viewColumns ...string) ([]*T, error)
@@ -121,7 +121,7 @@ func (dao *baseQuickDao[T]) GetByIdWithViewObj(tc *TransContext, id int64, view 
 	return GetByIdWithViewObj(tc, id, dao.meta, view)
 }
 
-func (dao *baseQuickDao[T]) GetByIdForUpdate(tc *TransContext, id int64, skipLocked bool, viewColumns ...string) ([]*T, error) {
+func (dao *baseQuickDao[T]) GetByIdForUpdate(tc *TransContext, id int64, skipLocked bool, viewColumns ...string) (*T, error) {
 	return GetByIdForUpdate(tc, id, dao.meta, skipLocked, viewColumns...)
 }
 

@@ -84,14 +84,21 @@ func GetByIdWithViewObj[T any](tc *TransContext, id int64, meta *TableMeta[T], v
 
 // GetByIdForUpdate  类似 GetById， 只是支持 for update
 // skipLocked, true 需要 SKIP LOCKED
-func GetByIdForUpdate[T any](tc *TransContext, id int64, meta *TableMeta[T], skipLocked bool, viewColumns ...string) ([]*T, error) {
+func GetByIdForUpdate[T any](tc *TransContext, id int64, meta *TableMeta[T], skipLocked bool, viewColumns ...string) (*T, error) {
 	m := NewMatcher()
 	fieldId := TableIdColumnName
 	if meta.AutoColumn != "" {
 		fieldId = meta.AutoColumn
 	}
 	m.Eq(fieldId, id)
-	return QueryListMatcherWithViewColumnsForUpdate(tc, m, meta, viewColumns, skipLocked)
+	list, err := QueryListMatcherWithViewColumnsForUpdate(tc, m, meta, viewColumns, skipLocked)
+	if err != nil {
+		return nil, err
+	}
+	if len(list) == 0 {
+		return nil, nil
+	}
+	return list[0], nil
 }
 
 // GetByIds 根据主键数组返回多条数据
